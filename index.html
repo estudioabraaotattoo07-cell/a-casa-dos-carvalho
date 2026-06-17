@@ -604,6 +604,7 @@ initStrip('strip-camilla',CAMILLA);
     }
   }
   function closeChat(){chat.classList.remove('open');fab.style.opacity='1';fab.style.pointerEvents='all';}
+  window.openChat=openChat;
   fab.onclick=openChat;
   xcl.onclick=closeChat;
 
