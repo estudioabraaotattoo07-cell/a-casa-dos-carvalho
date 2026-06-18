@@ -588,6 +588,7 @@ initStrip('strip-camilla',CAMILLA);
   var leadData={};
   var pendingRefs=[];  // URLs de imagens enviadas antes do lead ser salvo
   var savedLeadId=null; // ID do cliente após salvo no CRM
+  var origemUtm=(function(){try{return new URLSearchParams(window.location.search).get('origem')||'';}catch(e){return '';}}());
 
   var fab=document.getElementById('aura-fab');
   var chat=document.getElementById('aura-chat');
@@ -701,7 +702,8 @@ initStrip('strip-camilla',CAMILLA);
       insta:ld.insta||'',
       regiao:ld.regiao||'',
       nascimento:ld.nascimento||'',
-      referencias:pendingRefs
+      referencias:pendingRefs,
+      orig:origemUtm||''
     };
     console.log('[Aura] saveLead:',JSON.stringify(payload));
     fetch(C.leadUrl,{
