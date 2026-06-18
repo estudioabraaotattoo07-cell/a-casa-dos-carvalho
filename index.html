@@ -808,7 +808,7 @@ initStrip('strip-camilla',CAMILLA);
       return;
     }
     (async function(){
-      var compressed=await compressImg(file,1200,0.82);
+      var compressed=await compressImg(file,800,0.75);
       var dataUrl=compressed.dataUrl;
       // Mostra preview no chat
       var el=document.createElement('div');
