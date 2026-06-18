@@ -733,14 +733,6 @@ initStrip('strip-camilla',CAMILLA);
     }).then(function(d){
       if(d && d.clienteId){
         savedLeadId=d.clienteId;
-        // Associa imagens enviadas antes do lead ser criado
-        if(pendingRefs.length){
-          pendingRefs.forEach(function(url){
-            fetch(C.uploadUrl,{method:'POST',headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({base64:'',mimeType:'',clienteId:savedLeadId,urlJaSalva:url})
-            }).catch(function(){});
-          });
-        }
         console.log('[Aura] lead saved, id:',savedLeadId);
         // Se campanha já foi confirmada antes do lead ser salvo, vincula agora
         if(campanhaVinculada && campanhaVinculada.id){
@@ -751,12 +743,15 @@ initStrip('strip-camilla',CAMILLA);
   }
 
   function vincularCampanha(campanhaId){
-    if(!savedLeadId) return; // Será chamado novamente após o lead ser salvo
+    if(!savedLeadId){console.warn('[Aura] vincularCampanha: sem savedLeadId ainda, aguardando saveLead');return;}
+    console.log('[Aura] vincularCampanha:',savedLeadId,'→ campanha',campanhaId);
     fetch('https://inq-ink-system.vercel.app/api/vincular-campanha',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({clienteId:savedLeadId, campanhaId:campanhaId})
-    }).catch(function(){});
+    }).then(function(r){
+      r.json().then(function(d){console.log('[Aura] vincularCampanha result:',JSON.stringify(d));});
+    }).catch(function(e){console.warn('[Aura] vincularCampanha error:',e);});
   }
 
   function sendEmails(ld){
