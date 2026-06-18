@@ -589,6 +589,17 @@ initStrip('strip-camilla',CAMILLA);
   var pendingRefs=[];  // URLs de imagens enviadas antes do lead ser salvo
   var savedLeadId=null; // ID do cliente após salvo no CRM
   var origemUtm=(function(){try{return new URLSearchParams(window.location.search).get('origem')||'';}catch(e){return '';}}());
+  var campanhasAtivas=[];
+  var campanhaVinculada=null; // {id, nome} após confirmação pela Aura
+  // Carrega campanhas ativas em background ao abrir o chat
+  function carregarCampanhas(){
+    if(campanhasAtivas.length>0) return;
+    fetch('https://inq-ink-system.vercel.app/api/campanhas-ativas').then(function(r){
+      return r.ok?r.json():null;
+    }).then(function(d){
+      if(d && Array.isArray(d.campanhas)) campanhasAtivas=d.campanhas;
+    }).catch(function(){});
+  }
 
   var fab=document.getElementById('aura-fab');
   var chat=document.getElementById('aura-chat');
@@ -600,6 +611,7 @@ initStrip('strip-camilla',CAMILLA);
   function openChat(){
     chat.classList.add('open');
     fab.style.opacity='0';fab.style.pointerEvents='none';
+    carregarCampanhas();
     if(!msgs.children.length){
       setTimeout(function(){
         askAura('Olá!');
@@ -664,7 +676,7 @@ initStrip('strip-camilla',CAMILLA);
       var res=await fetch(C.apiUrl,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({messages:history})
+        body:JSON.stringify({messages:history, campanhas:campanhasAtivas})
       });
       dots.remove();
       if(!res.ok) throw new Error('status '+res.status);
@@ -682,6 +694,11 @@ initStrip('strip-camilla',CAMILLA);
           saveLead(ld);
           sendEmails(ld);
         }
+      }
+      // Handle campanha tag if returned
+      if(data.campanha && data.campanha.id && !campanhaVinculada){
+        campanhaVinculada=data.campanha;
+        vincularCampanha(data.campanha.id);
       }
     } catch(e){
       dots.remove();
@@ -725,8 +742,21 @@ initStrip('strip-camilla',CAMILLA);
           });
         }
         console.log('[Aura] lead saved, id:',savedLeadId);
+        // Se campanha já foi confirmada antes do lead ser salvo, vincula agora
+        if(campanhaVinculada && campanhaVinculada.id){
+          vincularCampanha(campanhaVinculada.id);
+        }
       }
     }).catch(function(e){console.warn('[Aura] lead fetch error:',e);});
+  }
+
+  function vincularCampanha(campanhaId){
+    if(!savedLeadId) return; // Será chamado novamente após o lead ser salvo
+    fetch('https://inq-ink-system.vercel.app/api/vincular-campanha',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clienteId:savedLeadId, campanhaId:campanhaId})
+    }).catch(function(){});
   }
 
   function sendEmails(ld){
