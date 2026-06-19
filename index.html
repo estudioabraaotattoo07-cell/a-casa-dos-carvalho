@@ -587,6 +587,7 @@ initStrip('strip-camilla',CAMILLA);
 
   var history=[];
   var leadSaved=false;
+  var leadSavedKey='';
   var leadData={};
   var pendingRefs=[];  // URLs de imagens enviadas antes do lead ser salvo
   var savedLeadId=null; // ID do cliente após salvo no CRM
@@ -625,10 +626,15 @@ initStrip('strip-camilla',CAMILLA);
     fab.style.opacity='0';fab.style.pointerEvents='none';
     carregarCampanhas();
     if(!msgs.children.length){
+      // Chat vazio — injeta na history silenciosamente e pede resposta
       history.push({role:'user',content:'Quero tatuar com '+artista+'.'});
+      setTimeout(function(){ askAura(null); },400);
+    } else {
+      // Chat já aberto com mensagens — envia como mensagem visível
       setTimeout(function(){
-        askAura(null);
-      },400);
+        usr('Quero falar com '+artista+'.');
+        askAura('Quero falar com '+artista+'.');
+      },100);
     }
   }
   window.openChatArtista=openChatArtista;
@@ -699,14 +705,21 @@ initStrip('strip-camilla',CAMILLA);
       await showTypingDelay(text);
       renderBot(text);
       history.push({role:'assistant',content:text});
-      // Handle lead data if returned
-      if(data.lead && !leadSaved){
+      // Handle lead data if returned — salva progressivamente
+      if(data.lead){
         var ld=data.lead;
-        if(ld.nome && ld.email && ld.tel){
-          leadSaved=true;
-          leadData=ld;
-          saveLead(ld);
-          sendEmails(ld);
+        if(ld.nome && ld.tel){
+          var ldKey=ld.nome+'|'+ld.tel+'|'+ld.email+'|'+ld.artista+'|'+ld.insta+'|'+ld.ideia;
+          if(ldKey!==leadSavedKey){
+            leadSavedKey=ldKey;
+            leadData=ld;
+            saveLead(ld);
+          }
+          // E-mails de boas-vindas só uma vez, quando tiver e-mail
+          if(!leadSaved && ld.email){
+            leadSaved=true;
+            sendEmails(ld);
+          }
         }
       }
       // Handle campanha tag if returned
