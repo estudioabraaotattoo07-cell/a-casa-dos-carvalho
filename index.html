@@ -596,7 +596,7 @@ initStrip('strip-camilla',CAMILLA);
   // Carrega campanhas ativas em background ao abrir o chat
   function carregarCampanhas(){
     if(campanhasAtivas.length>0) return;
-    fetch('https://inq-ink-system.vercel.app/api/campanhas-ativas').then(function(r){
+    fetch('https://inq-saas.vercel.app/api/campanhas-ativas').then(function(r){
       return r.ok?r.json():null;
     }).then(function(d){
       if(d && Array.isArray(d.campanhas)) campanhasAtivas=d.campanhas;
