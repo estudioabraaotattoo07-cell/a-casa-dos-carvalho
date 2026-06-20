@@ -621,6 +621,12 @@ initStrip('strip-camilla',CAMILLA);
       },400);
     }
   }
+  // Auto-open após 9s — apenas uma vez por sessão
+  if(!sessionStorage.getItem('aura_auto_opened')){
+    sessionStorage.setItem('aura_auto_opened','1');
+    setTimeout(function(){ openChat(); }, 9000);
+  }
+
   function openChatArtista(artista){
     chat.classList.add('open');
     fab.style.opacity='0';fab.style.pointerEvents='none';
