@@ -137,7 +137,7 @@ footer{border-top:0.5px solid rgba(255,255,255,0.06);padding:36px var(--pad) 28p
 .footer-bottom{border-top:0.5px solid rgba(255,255,255,0.04);padding-top:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;font-size:7.5px;color:rgba(255,255,255,0.18);letter-spacing:1.5px}
 .footer-bottom a{color:rgba(255,255,255,0.18);text-decoration:none;transition:color .2s}
 .footer-bottom a:hover{color:var(--gold)}
-.wa-float{position:fixed;bottom:26px;right:26px;z-index:200;width:52px;height:52px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 22px rgba(37,211,102,0.32);cursor:pointer;transition:transform .2s;text-decoration:none}
+.wa-float{position:fixed;bottom:max(26px,env(safe-area-inset-bottom,26px));right:26px;z-index:200;width:52px;height:52px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 22px rgba(37,211,102,0.32);cursor:pointer;transition:transform .2s;text-decoration:none}
 .wa-float:hover{transform:scale(1.12)}
 .wa-float svg{width:26px;height:26px;fill:#fff}
 .lb{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.96);display:none;align-items:center;justify-content:center}
@@ -526,6 +526,12 @@ setupStrip('outer-camilla');
 initStrip('strip-abraao',ABRAAO);
 initStrip('strip-camilla',CAMILLA);
 </script>
+<a id="wa-float-btn" class="wa-float" href="javascript:void(0)" onclick="openChatWhatsApp()" aria-label="Falar pelo WhatsApp">
+  <svg width="26" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#fff">
+    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+    <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.857L.057 23.571c-.073.272.172.517.444.444l5.792-1.463A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.012-1.374l-.36-.214-3.733.943.979-3.646-.235-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182c5.431 0 9.818 4.388 9.818 9.818 0 5.431-4.387 9.818-9.818 9.818z"/>
+  </svg>
+</a>
 <!-- ═══ AURA WIDGET ═══ -->
 <style>
 #aura-fab{position:fixed;bottom:88px;right:24px;z-index:9998;background:#C9A84C;color:#0f0f0f;border:none;border-radius:50px;padding:10px 18px;font-family:'Cormorant Garamond',Georgia,serif;cursor:grab;box-shadow:0 4px 24px rgba(201,168,76,.45);transition:box-shadow .3s;display:flex;flex-direction:column;align-items:flex-start;gap:1px;white-space:nowrap}
@@ -616,6 +622,29 @@ initStrip('strip-camilla',CAMILLA);
   var origemUtm=(function(){try{return new URLSearchParams(window.location.search).get('origem')||'';}catch(e){return '';}}());
   var campanhasAtivas=[];
   var campanhaVinculada=null; // {id, nome} após confirmação pela Aura
+  var studioTelAtual='';
+  var waLinkOferecido=false;
+
+  function carregarConfig(){
+    fetch('https://inq-saas.vercel.app/api/config').then(function(r){
+      return r.ok?r.json():null;
+    }).then(function(d){
+      if(d&&d.studio_tel) studioTelAtual=d.studio_tel;
+    }).catch(function(){});
+  }
+
+  function montarLinkWhatsApp(ld,tel){
+    var partes=['Olá! Sou '+(ld.nome||'')];
+    if(ld.ideia) partes.push('conversei com a Aura sobre uma tatuagem de '+ld.ideia);
+    if(ld.regiao) partes.push('na região: '+ld.regiao);
+    if(ld.artista) partes.push('Artista de interesse: '+ld.artista);
+    if(ld.orcamento) partes.push('Orçamento que separei: '+ld.orcamento);
+    if(ld.horario_ligacao) partes.push('Melhor horário para me ligarem: '+ld.horario_ligacao);
+    if(ld.email) partes.push('Meu e-mail: '+ld.email);
+    var num=tel||studioTelAtual||'';
+    return 'https://wa.me/55'+num+'?text='+encodeURIComponent(partes.join('. ')+'.');
+  }
+
   // Carrega campanhas ativas em background ao abrir o chat
   function carregarCampanhas(){
     if(campanhasAtivas.length>0) return;
@@ -636,7 +665,7 @@ initStrip('strip-camilla',CAMILLA);
   function openChat(){
     chat.classList.add('open');
     fab.style.opacity='0';fab.style.pointerEvents='none';
-    carregarCampanhas();
+    carregarCampanhas();carregarConfig();
     if(!msgs.children.length){
       setTimeout(function(){
         askAura('Olá!');
@@ -652,7 +681,7 @@ initStrip('strip-camilla',CAMILLA);
   function openChatArtista(artista){
     chat.classList.add('open');
     fab.style.opacity='0';fab.style.pointerEvents='none';
-    carregarCampanhas();
+    carregarCampanhas();carregarConfig();
     if(!msgs.children.length){
       // Chat vazio — injeta na history silenciosamente e pede resposta
       history.push({role:'user',content:'Quero tatuar com '+artista+'.'});
@@ -666,6 +695,23 @@ initStrip('strip-camilla',CAMILLA);
     }
   }
   window.openChatArtista=openChatArtista;
+
+  function openChatWhatsApp(){
+    chat.classList.add('open');
+    fab.style.opacity='0';fab.style.pointerEvents='none';
+    carregarCampanhas();carregarConfig();
+    if(!msgs.children.length){
+      history.push({role:'user',content:'Quero falar com vocês pelo WhatsApp.'});
+      setTimeout(function(){askAura(null);},400);
+    }else{
+      setTimeout(function(){
+        usr('Quero falar pelo WhatsApp.');
+        askAura('Quero falar pelo WhatsApp.');
+      },100);
+    }
+  }
+  window.openChatWhatsApp=openChatWhatsApp;
+
   function closeChat(){chat.classList.remove('open');fab.style.opacity='1';fab.style.pointerEvents='all';}
   window.openChat=openChat;
   xcl.onclick=closeChat;
@@ -739,15 +785,31 @@ initStrip('strip-camilla',CAMILLA);
     return td;
   }
 
+  var WA_ICON_SVG='<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#fff;flex-shrink:0">'
+    +'<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>'
+    +'<path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.857L.057 23.571c-.073.272.172.517.444.444l5.792-1.463A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.012-1.374l-.36-.214-3.733.943.979-3.646-.235-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182c5.431 0 9.818 4.388 9.818 9.818 0 5.431-4.387 9.818-9.818 9.818z"/>'
+    +'</svg>';
+
   function renderBot(txt){
-    // Convert links in text to anchor tags
     var el=document.createElement('div');
     el.className='am b';
-    // Linkify WhatsApp URLs
-    var html=txt.replace(/(https?:\/\/[^\s]+)/g,function(url){
+    var html=txt;
+    if(html.indexOf('[WA_LINK]')!==-1&&!waLinkOferecido){
+      waLinkOferecido=true;
+      var waHref=montarLinkWhatsApp(leadData,studioTelAtual);
+      var waBtn='<a href="'+waHref+'" target="_blank" rel="noopener" '
+        +'style="display:inline-flex;align-items:center;gap:10px;margin-top:12px;'
+        +'padding:12px 20px;background:#25D366;color:#fff;border-radius:28px;'
+        +'text-decoration:none;font-weight:600;font-size:0.9em;box-shadow:0 2px 12px rgba(37,211,102,0.35);">'
+        +WA_ICON_SVG
+        +'Falar agora no WhatsApp — resposta rápida da nossa equipe</a>';
+      html=html.replace('[WA_LINK]',waBtn);
+    }else{
+      html=html.replace(/\[WA_LINK\]/g,'');
+    }
+    html=html.replace(/(https?:\/\/[^\s<]+)/g,function(url){
       return '<a href="'+url+'" target="_blank" rel="noopener" style="color:#C9A84C;word-break:break-all;">'+url+'</a>';
     });
-    // Convert \n to <br>
     html=html.replace(/\n/g,'<br>');
     el.innerHTML=html;
     msgs.appendChild(el);scr();
@@ -810,6 +872,7 @@ initStrip('strip-camilla',CAMILLA);
         campanhaVinculada=data.campanha;
         vincularCampanha(data.campanha.id);
       }
+      if(data.studio_tel) studioTelAtual=data.studio_tel;
       if(data.agendamento){
         // Meta Pixel — LeadQuente
         if(typeof fbq==='function') fbq('trackCustom','LeadQuente',{origem:origemUtm});
