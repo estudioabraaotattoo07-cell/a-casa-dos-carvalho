@@ -874,14 +874,19 @@ initStrip('strip-camilla',CAMILLA);
       }
       if(data.studio_tel) studioTelAtual=data.studio_tel;
       if(data.agendamento){
-        // Meta Pixel — LeadQuente
-        if(typeof fbq==='function') fbq('trackCustom','LeadQuente',{origem:origemUtm});
-        // Google Ads — LeadQuente (conversão)
+        var tipoAgend=data.agendamento_tipo||'';
+        // Meta Pixel — Contact (consulta) ou Schedule (sessao)
+        if(typeof fbq==='function'){
+          if(tipoAgend==='consulta') fbq('track','Contact',{origem:origemUtm});
+          else fbq('track','Schedule',{origem:origemUtm});
+        }
+        // Google Ads — conversao
         if(typeof gtag==='function') gtag('event','conversion',{'send_to':'AW-18264070158/Gi3eCNrg9sMcEI6w_oRE'});
         // Registro no CRM
+        var tipoEvento=tipoAgend==='consulta'?'Consulta':'Sessao';
         fetch('https://inq-saas.vercel.app/api/registrar-evento',{
           method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({tipo_evento:'LeadQuente',origem:origemUtm,cliente_id:savedLeadId||null})
+          body:JSON.stringify({tipo_evento:tipoEvento,origem:origemUtm,cliente_id:savedLeadId||null})
         }).catch(function(){});
       }
     } catch(e){
@@ -919,12 +924,12 @@ initStrip('strip-camilla',CAMILLA);
       if(d && d.clienteId){
         savedLeadId=d.clienteId;
         console.log('[Aura] lead saved, id:',savedLeadId);
-        // Meta Pixel — LeadFrio
-        if(typeof fbq==='function') fbq('trackCustom','LeadFrio',{origem:origemUtm});
+        // Meta Pixel — Lead (evento padrao)
+        if(typeof fbq==='function') fbq('track','Lead',{origem:origemUtm});
         // Registro no CRM
         fetch('https://inq-saas.vercel.app/api/registrar-evento',{
           method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({tipo_evento:'LeadFrio',origem:origemUtm,cliente_id:savedLeadId})
+          body:JSON.stringify({tipo_evento:'Lead',origem:origemUtm,cliente_id:savedLeadId})
         }).catch(function(){});
         // Se campanha já foi confirmada antes do lead ser salvo, vincula agora
         if(campanhaVinculada && campanhaVinculada.id){
