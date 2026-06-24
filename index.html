@@ -793,7 +793,10 @@ initStrip('strip-camilla',CAMILLA);
   function renderBot(txt){
     var el=document.createElement('div');
     el.className='am b';
-    var html=txt;
+    // Converter URLs em links ANTES de inserir qualquer HTML — evita que regex processe HTML gerado
+    var html=txt.replace(/(https?:\/\/[^\s<\[]+)/g,function(url){
+      return '<a href="'+url+'" target="_blank" rel="noopener" style="color:#C9A84C;word-break:break-all;">'+url+'</a>';
+    });
     if(html.indexOf('[WA_LINK]')!==-1&&!waLinkOferecido){
       waLinkOferecido=true;
       var waHref=montarLinkWhatsApp(leadData,studioTelAtual);
@@ -807,9 +810,6 @@ initStrip('strip-camilla',CAMILLA);
     }else{
       html=html.replace(/\[WA_LINK\]/g,'');
     }
-    html=html.replace(/(https?:\/\/[^\s<]+)/g,function(url){
-      return '<a href="'+url+'" target="_blank" rel="noopener" style="color:#C9A84C;word-break:break-all;">'+url+'</a>';
-    });
     html=html.replace(/\n/g,'<br>');
     el.innerHTML=html;
     msgs.appendChild(el);scr();
