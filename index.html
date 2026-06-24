@@ -1037,9 +1037,7 @@ initStrip('strip-camilla',CAMILLA);
       img.style.cssText='max-width:180px;max-height:180px;border-radius:8px;display:block;margin-top:4px';
       el.appendChild(img);
       msgs.appendChild(el);scr();
-      // Adiciona na conversa como descrição de imagem para a Aura
-      history.push({role:'user',content:'[O cliente enviou uma imagem de referência]'});
-      // Faz upload
+      // Faz upload — só registra no histórico se der certo
       var base64=compressed.base64;
       try{
         var r=await fetch(C.uploadUrl,{
@@ -1050,6 +1048,7 @@ initStrip('strip-camilla',CAMILLA);
         var d=await r.json();
         if(d.url){
           pendingRefs.push(d.url);
+          history.push({role:'user',content:'[O cliente enviou uma imagem de referência]'});
           await askAura(null);
         } else {
           renderBot('Recebi a imagem, mas tive um problema ao salvá-la. Pode tentar novamente?');
