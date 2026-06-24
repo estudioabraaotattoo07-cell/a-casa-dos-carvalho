@@ -860,8 +860,8 @@ initStrip('strip-camilla',CAMILLA);
             leadData=ld;
             saveLead(ld);
           }
-          // E-mails de boas-vindas só uma vez, quando tiver e-mail
-          if(!leadSaved && ld.email){
+          // E-mails de boas-vindas so uma vez, quando tiver email + ideia coletada
+          if(!leadSaved && ld.email && ld.ideia){
             leadSaved=true;
             sendEmails(ld);
           }
