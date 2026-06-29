@@ -663,20 +663,30 @@ initStrip('strip-camilla',CAMILLA);
   var snd=document.getElementById('aura-send');
   var xcl=document.getElementById('aura-x');
 
+  var greetingMostrado=false;
+  var GREETING_TEXT='Olá! Seja bem-vindo à Casa dos Carvalho. Sou a Aura, assistente do estúdio. Posso te ajudar com informações, indicar o artista ideal para o seu projeto ou solicitar um agendamento. Como posso te ajudar?';
+  function mostrarGreeting(){
+    if(greetingMostrado||msgs.children.length)return;
+    greetingMostrado=true;
+    var el=document.createElement('div');
+    el.className='am b';
+    el.textContent=GREETING_TEXT;
+    msgs.appendChild(el);
+    msgs.scrollTop=msgs.scrollHeight;
+    // Registra no history para que Claude saiba o que a Aura disse — sem chamar a API
+    history.push({role:'assistant',content:GREETING_TEXT});
+  }
+
   function openChat(){
     chat.classList.add('open');
     fab.style.opacity='0';fab.style.pointerEvents='none';
     carregarCampanhas();carregarConfig();
-    if(!msgs.children.length){
-      setTimeout(function(){
-        askAura('Olá!');
-      },400);
-    }
+    setTimeout(mostrarGreeting,400);
   }
-  // Auto-open após 9s — apenas uma vez por sessão
+  // Auto-open após 20s — apenas uma vez por sessão
   if(!sessionStorage.getItem('aura_auto_opened')){
     sessionStorage.setItem('aura_auto_opened','1');
-    setTimeout(function(){ openChat(); }, 9000);
+    setTimeout(function(){ openChat(); }, 20000);
   }
 
   function openChatArtista(artista){
