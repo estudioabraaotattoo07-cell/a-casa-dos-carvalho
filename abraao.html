@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Abraão de Carvalho – Casa dos Carvalho Tattoo</title>
+<meta name="facebook-domain-verification" content="vf02dj4adywiftnmwx1zilnle3ftuj" />
+<!-- Meta Pixel -->
+<script>
+var META_PIXEL_ID = '1498170261997186';
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}
+(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', META_PIXEL_ID);
+fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=1498170261997186&ev=PageView&noscript=1"/></noscript>
+<!-- End Meta Pixel -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18264070158"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-18264070158');
+</script>
+<!-- End Google tag -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--gold:#C9A84C;--bg:#080808;--off:#e8e4dc}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-family:"Montserrat",sans-serif}
+
+/* ── PAGE LAYOUT ── */
+#page{display:flex;height:100vh;height:100dvh}
+
+/* Desktop: split screen */
+#bio{
+  width:360px;flex-shrink:0;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:32px 24px;gap:20px;
+  background:var(--bg);border-right:0.5px solid rgba(255,255,255,0.06);
+  overflow:hidden;
+}
+#chat-wrap{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;
+  background:#0a0a0a;
+}
+
+/* ── BIO SECTION ── */
+#bio-rosto{
+  width:110px;height:110px;border-radius:50%;object-fit:cover;object-position:center top;
+  border:1.5px solid rgba(201,168,76,0.4);flex-shrink:0;
+}
+#bio-thumbs{display:flex;gap:8px}
+#bio-thumbs img{
+  width:72px;height:90px;object-fit:cover;border-radius:6px;
+  border:0.5px solid rgba(255,255,255,0.06);
+  transition:border-color .2s;
+}
+#bio-thumbs img:hover{border-color:rgba(201,168,76,0.4)}
+#bio-text{text-align:center}
+#bio-eyebrow{
+  font-size:7px;font-weight:500;letter-spacing:4px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:8px;
+}
+#bio-headline{
+  font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:300;
+  color:var(--off);line-height:1.3;
+  /* ── SUBSTITUA ESTE TEXTO PELO TEXTO FINAL DO ABRAÃO ── */
+}
+
+/* ── CHAT EMBEDDED ── */
+#aura-chat{
+  display:flex;flex-direction:column;flex:1;overflow:hidden;
+  border-radius:0;border:none;box-shadow:none;
+  background:#111;
+}
+#aura-hdr{
+  background:#0d0d0d;border-bottom:1px solid #1c1c1c;
+  padding:13px 15px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+#aura-av{
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.28);
+  display:flex;align-items:center;justify-content:center;color:#C9A84C;font-size:14px;flex-shrink:0;
+}
+#aura-name{font-family:"Cormorant Garamond",Georgia,serif;font-size:15px;font-weight:700;color:#e5d09a;letter-spacing:.3px}
+#aura-sub{font-size:10px;color:#484848;margin-top:1px;font-family:sans-serif}
+#aura-msgs{
+  flex:1;overflow-y:auto;padding:14px;
+  display:flex;flex-direction:column;gap:9px;scroll-behavior:smooth;
+}
+#aura-msgs::-webkit-scrollbar{width:3px}
+#aura-msgs::-webkit-scrollbar-track{background:transparent}
+#aura-msgs::-webkit-scrollbar-thumb{background:#222;border-radius:2px}
+.am{max-width:86%;font-size:13px;line-height:1.6;border-radius:12px;padding:9px 13px;font-family:'DM Sans','Segoe UI',sans-serif;animation:amIn .25s ease}
+.am.b{background:#191919;border:1px solid #202020;color:#bbb;align-self:flex-start;border-bottom-left-radius:4px;white-space:pre-line}
+.am.u{background:rgba(201,168,76,.13);border:1px solid rgba(201,168,76,.22);color:#e5d09a;align-self:flex-end;border-bottom-right-radius:4px}
+.am img{max-width:120px;max-height:120px;border-radius:8px;display:block;margin-top:6px}
+@keyframes amIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.aura-dots{display:flex;gap:4px;padding:9px 14px;align-self:flex-start}
+.aura-dots span{width:6px;height:6px;background:#333;border-radius:50%;animation:adot 1.2s infinite}
+.aura-dots span:nth-child(2){animation-delay:.2s}.aura-dots span:nth-child(3){animation-delay:.4s}
+@keyframes adot{0%,80%,100%{opacity:.2}40%{opacity:1}}
+#aura-inp-area{
+  border-top:1px solid #1c1c1c;padding:10px 12px;
+  display:flex;gap:7px;align-items:flex-end;
+  background:#0d0d0d;flex-shrink:0;
+  padding-bottom:max(10px,env(safe-area-inset-bottom,10px));
+}
+#aura-inp{
+  flex:1;background:#181818;border:1px solid #252525;border-radius:10px;
+  padding:9px 11px;font-family:'DM Sans','Segoe UI',sans-serif;font-size:16px;
+  color:#ccc;resize:none;outline:none;transition:border-color .2s;max-height:78px;overflow-y:auto;
+}
+#aura-inp:focus{border-color:rgba(201,168,76,.35)}
+#aura-inp::placeholder{color:#383838}
+#aura-send{
+  background:#C9A84C;border:none;border-radius:10px;width:38px;height:38px;
+  color:#0f0f0f;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:background .2s;flex-shrink:0;
+}
+#aura-send:hover{background:#d9b84e}
+#aura-send:disabled{background:#1e1e1e;color:#333;cursor:not-allowed}
+#aura-photo-btn{
+  background:#181818;border:1px solid #252525;border-radius:10px;
+  width:38px;height:38px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;color:#444;font-size:16px;transition:all .2s;flex-shrink:0;
+}
+#aura-photo-btn:hover{border-color:#333;color:#666}
+.ask{display:inline-block;margin-top:7px;padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid #2a2a2a;background:#161616;color:#777;transition:all .2s;font-family:'DM Sans',sans-serif}
+.ask:hover{background:#1e1e1e;color:#999}
+#aura-ph-inp{display:none}
+
+/* ── MOBILE ── */
+@media(max-width:767px){
+  #page{flex-direction:column}
+  #bio{
+    width:100%;flex-shrink:0;
+    flex-direction:row;align-items:center;
+    padding:12px 16px;gap:12px;
+    border-right:none;border-bottom:0.5px solid rgba(255,255,255,0.06);
+    height:auto;
+    /* bio ocupa no máximo 28% da tela */
+    max-height:28dvh;
+    overflow:hidden;
+  }
+  #bio-rosto{width:56px;height:56px;flex-shrink:0}
+  #bio-thumbs{gap:5px;flex-shrink:0}
+  #bio-thumbs img{width:44px;height:56px;border-radius:4px}
+  #bio-text{text-align:left;min-width:0}
+  #bio-eyebrow{font-size:6px;letter-spacing:3px;margin-bottom:4px}
+  #bio-headline{font-size:13px;line-height:1.35}
+  #chat-wrap{flex:1;min-height:0}
+}
+</style>
+</head>
+<body>
+
+<div id="page">
+
+  <!-- ── BIO ── -->
+  <div id="bio">
+    <img id="bio-rosto" src="fotos/Abraão trabalhos/rosto.jpg" alt="Abraão de Carvalho">
+    <div id="bio-thumbs">
+      <img src="fotos/Abraão trabalhos/1.jpg" alt="Trabalho 1">
+      <img src="fotos/Abraão trabalhos/2.jpg" alt="Trabalho 2">
+      <img src="fotos/Abraão trabalhos/4.jpg" alt="Trabalho 4">
+    </div>
+    <div id="bio-text">
+      <div id="bio-eyebrow">Abraão de Carvalho · Casa dos Carvalho</div>
+      <div id="bio-headline">
+        <!-- ── SUBSTITUA ESTE TEXTO PELO TEXTO FINAL DO ABRAÃO ── -->
+        Realismo em pontilhismo — cada ponto, uma decisão de artista.
+        <!-- ── FIM DO PLACEHOLDER ── -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHAT WRAP ── -->
+  <div id="chat-wrap">
+    <div id="aura-chat">
+      <div id="aura-hdr">
+        <div id="aura-av">✦</div>
+        <div>
+          <div id="aura-name">Aura</div>
+          <div id="aura-sub">Assistente do Abraão</div>
+        </div>
+      </div>
+      <div id="aura-msgs"></div>
+      <input type="file" id="aura-ph-inp" accept="image/*">
+      <div id="aura-inp-area">
+        <button id="aura-photo-btn" title="Enviar foto de referência">📷</button>
+        <textarea id="aura-inp" placeholder="Digite aqui..." rows="1"></textarea>
+        <button id="aura-send">↑</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var C={
+    rk:'re_ceSfj4e2_NKrF8m2CHfaMtaj2S1pPLq15',
+    eA:'estudioabraaotattoo07@gmail.com',
+    eC:'camilla-acampos@hotmail.com',
+    px:'https://inq-saas.vercel.app/api/resend',
+    fr:'aura@acasadoscarvalhotattoo.com.br',
+    apiUrl:'https://inq-saas.vercel.app/api/chat',
+    leadUrl:'https://inq-saas.vercel.app/api/lead',
+    uploadUrl:'https://inq-saas.vercel.app/api/upload',
+    contexto:'abraao',
+  };
+
+  var history=[];
+  var leadSaved=false;
+  var leadSavedKey='';
+  var leadData={};
+  var pendingRefs=[];
+  var savedLeadId=null;
+  var origemUtm=(function(){try{return new URLSearchParams(window.location.search).get('origem')||'';}catch(e){return '';}}());
+  var campanhasAtivas=[];
+  var campanhaVinculada=null;
+  var studioTelAtual='';
+  var waLinkOferecido=false;
+
+  function carregarConfig(){
+    fetch('https://inq-saas.vercel.app/api/config').then(function(r){
+      return r.ok?r.json():null;
+    }).then(function(d){
+      if(d&&d.studio_tel) studioTelAtual=d.studio_tel;
+    }).catch(function(){});
+  }
+
+  function montarLinkWhatsApp(ld,tel){
+    var partes=['Olá! Sou '+(ld.nome||'')];
+    if(ld.ideia) partes.push('conversei com a Aura sobre uma tatuagem de '+ld.ideia);
+    if(ld.regiao) partes.push('na região: '+ld.regiao);
+    if(ld.artista) partes.push('Artista de interesse: '+ld.artista);
+    if(ld.orcamento) partes.push('Orçamento que separei: '+ld.orcamento);
+    if(ld.horario_ligacao) partes.push('Melhor horário para me ligarem: '+ld.horario_ligacao);
+    if(ld.email) partes.push('Meu e-mail: '+ld.email);
+    var num=tel||studioTelAtual||'';
+    return 'https://wa.me/55'+num+'?text='+encodeURIComponent(partes.join('. ')+'.');
+  }
+
+  function carregarCampanhas(){
+    if(campanhasAtivas.length>0) return;
+    fetch('https://inq-saas.vercel.app/api/campanhas-ativas').then(function(r){
+      return r.ok?r.json():null;
+    }).then(function(d){
+      if(d && Array.isArray(d.campanhas)) campanhasAtivas=d.campanhas;
+    }).catch(function(){});
+  }
+
+  var msgs=document.getElementById('aura-msgs');
+  var inp=document.getElementById('aura-inp');
+  var snd=document.getElementById('aura-send');
+
+  // Greeting — sem chamada à API, hardcoded, custo zero
+  var GREETING_TEXT='Olá! Sou a Aura, assistente do Abraão de Carvalho. Estou aqui para te ajudar a iniciar seu projeto de tatuagem. Pode me contar o que você tem em mente?';
+  (function iniciar(){
+    carregarCampanhas();
+    carregarConfig();
+    setTimeout(function(){
+      var el=document.createElement('div');
+      el.className='am b';
+      el.textContent=GREETING_TEXT;
+      msgs.appendChild(el);
+      msgs.scrollTop=msgs.scrollHeight;
+      history.push({role:'assistant',content:GREETING_TEXT});
+    },400);
+  })();
+
+  var WA_ICON_SVG='<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#fff;flex-shrink:0">'
+    +'<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>'
+    +'<path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.857L.057 23.571c-.073.272.172.517.444.444l5.792-1.463A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.012-1.374l-.36-.214-3.733.943.979-3.646-.235-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182c5.431 0 9.818 4.388 9.818 9.818 0 5.431-4.387 9.818-9.818 9.818z"/>'
+    +'</svg>';
+
+  function renderBot(txt){
+    var el=document.createElement('div');
+    el.className='am b';
+    var html=txt.replace(/(https?:\/\/[^\s<\[]+)/g,function(url){
+      return '<a href="'+url+'" target="_blank" rel="noopener" style="color:#C9A84C;word-break:break-all;">'+url+'</a>';
+    });
+    if(html.indexOf('[WA_LINK]')!==-1&&!waLinkOferecido){
+      waLinkOferecido=true;
+      var waHref=montarLinkWhatsApp(leadData,studioTelAtual);
+      var waBtn='<a href="'+waHref+'" target="_blank" rel="noopener" '
+        +'style="display:inline-flex;align-items:center;gap:10px;margin-top:12px;'
+        +'padding:12px 20px;background:#25D366;color:#fff;border-radius:28px;'
+        +'text-decoration:none;font-weight:600;font-size:0.9em;box-shadow:0 2px 12px rgba(37,211,102,0.35);">'
+        +WA_ICON_SVG
+        +'Falar agora no WhatsApp — resposta rápida da nossa equipe</a>';
+      html=html.replace('[WA_LINK]',waBtn);
+    }else{
+      html=html.replace(/\[WA_LINK\]/g,'');
+    }
+    html=html.replace(/\n/g,'<br>');
+    el.innerHTML=html;
+    msgs.appendChild(el);scr();
+  }
+
+  function showDots(){
+    var td=document.createElement('div');
+    td.className='aura-dots';
+    td.innerHTML='<span></span><span></span><span></span>';
+    msgs.appendChild(td);scr();
+    return td;
+  }
+
+  function showTypingDelay(txt){
+    return new Promise(function(ok){
+      setTimeout(ok, Math.min(600+txt.length*6, 2000));
+    });
+  }
+
+  function usr(txt){
+    var el=document.createElement('div');
+    el.className='am u';
+    el.textContent=txt;
+    msgs.appendChild(el);scr();
+  }
+
+  function scr(){msgs.scrollTop=msgs.scrollHeight;}
+  function dis(v){inp.disabled=v;snd.disabled=v;inp.placeholder=v?'…':'Digite aqui...';}
+
+  async function askAura(userMsg){
+    dis(true);
+    if(userMsg!==null){
+      history.push({role:'user',content:userMsg});
+    }
+    var dots=showDots();
+    try{
+      var res=await fetch(C.apiUrl,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({messages:history, campanhas:campanhasAtivas, contexto:C.contexto})
+      });
+      dots.remove();
+      if(!res.ok) throw new Error('status '+res.status);
+      var data=await res.json();
+      var text=data.text||'Ops, tive um problema. Pode tentar novamente?';
+      await showTypingDelay(text);
+      renderBot(text);
+      history.push({role:'assistant',content:text});
+      if(data.lead){
+        var ld=data.lead;
+        if(ld.nome && ld.tel){
+          var ldKey=ld.nome+'|'+ld.tel+'|'+ld.email+'|'+ld.artista+'|'+ld.insta+'|'+ld.ideia;
+          if(ldKey!==leadSavedKey){
+            leadSavedKey=ldKey;
+            leadData=ld;
+            saveLead(ld);
+          }
+          if(!leadSaved && ld.email && ld.ideia){
+            leadSaved=true;
+            sendEmails(ld);
+          }
+        }
+      }
+      if(data.campanha && data.campanha.id && !campanhaVinculada){
+        campanhaVinculada=data.campanha;
+        vincularCampanha(data.campanha.id);
+      }
+      if(data.studio_tel) studioTelAtual=data.studio_tel;
+      if(data.agendamento){
+        var tipoAgend=data.agendamento_tipo||'';
+        if(typeof fbq==='function'){
+          if(tipoAgend==='consulta') fbq('track','Contact',{origem:origemUtm});
+          else fbq('track','Schedule',{origem:origemUtm});
+        }
+        if(typeof gtag==='function') gtag('event','conversion',{'send_to':'AW-18264070158/Gi3eCNrg9sMcEI6w_oRE'});
+        var tipoEvento=tipoAgend==='consulta'?'Consulta':'Sessao';
+        fetch('https://inq-saas.vercel.app/api/registrar-evento',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({tipo_evento:tipoEvento,origem:origemUtm,cliente_id:savedLeadId||null})
+        }).catch(function(){});
+      }
+    } catch(e){
+      dots.remove();
+      renderBot('Desculpe, tive uma instabilidade. Pode tentar novamente?');
+      console.warn('[Aura] chat error:',e);
+    }
+    dis(false);
+    inp.focus();
+  }
+
+  function saveLead(ld){
+    var payload={
+      nome:ld.nome||'',
+      tel:(ld.tel||'').replace(/\D/g,''),
+      email:ld.email||'',
+      idea:ld.ideia||'',
+      artista:ld.artista||null,
+      insta:ld.insta||'',
+      regiao:ld.regiao||'',
+      nascimento:ld.nascimento||'',
+      referencias:pendingRefs,
+      orig:origemUtm||'',
+      obs:ld.obs||'',
+      chat_log:history.slice()
+    };
+    fetch(C.leadUrl,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)
+    }).then(function(r){
+      if(!r.ok){r.text().then(function(t){console.warn('[Aura] lead error:',t);});return;}
+      return r.json();
+    }).then(function(d){
+      if(d && d.clienteId){
+        savedLeadId=d.clienteId;
+        if(typeof fbq==='function') fbq('track','Lead',{origem:origemUtm});
+        fetch('https://inq-saas.vercel.app/api/registrar-evento',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({tipo_evento:'Lead',origem:origemUtm,cliente_id:savedLeadId})
+        }).catch(function(){});
+        if(campanhaVinculada && campanhaVinculada.id){
+          vincularCampanha(campanhaVinculada.id);
+        }
+      }
+    }).catch(function(e){console.warn('[Aura] lead fetch error:',e);});
+  }
+
+  function vincularCampanha(campanhaId){
+    if(!savedLeadId) return;
+    fetch('https://inq-ink-system.vercel.app/api/vincular-campanha',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clienteId:savedLeadId, campanhaId:campanhaId})
+    }).catch(function(e){console.warn('[Aura] vincularCampanha error:',e);});
+  }
+
+  function sendEmails(ld){
+    var pn=ld.artista||'Abraão';
+    var nome=ld.nome||'';
+    var fn=nome.trim().split(' ')[0];
+    var lh='<div style="font-family:Arial,sans-serif;max-width:600px;color:#222">'+
+      '<h2 style="color:#C9A84C;border-bottom:2px solid #C9A84C;padding-bottom:8px">✦ Novo Lead — Aura / Abraão</h2>'+
+      '<table style="border-collapse:collapse;width:100%">'+
+      '<tr><td style="padding:8px;border-bottom:1px solid #eee;width:140px"><strong>Nome</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+nome+'</td></tr>'+
+      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>E-mail</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+ld.email+'</td></tr>'+
+      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WhatsApp</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+ld.tel+'</td></tr>'+
+      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Ideia</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.ideia||'—')+'</td></tr>'+
+      '<tr><td style="padding:8px"><strong>Artista</strong></td><td style="padding:8px">'+pn+'</td></tr>'+
+      '</table></div>';
+    fetch(C.px,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({apiKey:C.rk,from:C.fr,to:[C.eA],subject:'✦ Novo Lead (Abraão) — '+nome,html:lh})
+    }).catch(function(){});
+    if(ld.email){
+      var ch='<div style="font-family:Arial,sans-serif;max-width:600px;color:#222">'+
+        '<h2 style="color:#C9A84C">✦ Casa dos Carvalho Tattoo</h2>'+
+        '<p>Olá, '+fn+'! Recebemos tudo certinho 🖤</p>'+
+        '<p>Sua ideia foi registrada e em breve o Abraão ou nossa equipe vai entrar em contato para cuidar de cada detalhe do seu projeto.</p>'+
+        '<p>Obrigado(a) por escolher a Casa dos Carvalho!</p>'+
+        '<p style="color:#888;font-size:12px">Casa dos Carvalho Tattoo — Vitória, ES</p></div>';
+      fetch(C.px,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({apiKey:C.rk,from:C.fr,to:[ld.email],subject:'✦ Recebemos sua mensagem!',html:ch})
+      }).catch(function(){});
+    }
+  }
+
+  function send(){
+    var v=inp.value.trim();if(!v||inp.disabled)return;
+    inp.value='';inp.style.height='auto';
+    usr(v);
+    askAura(v);
+  }
+  inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+  snd.onclick=send;
+  inp.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,78)+'px';});
+
+  // ── Compressão + upload de imagem ─────────────────────────────────────────
+  function compressImg(file,maxPx,quality){
+    return new Promise(function(resolve){
+      var reader=new FileReader();
+      reader.onload=function(e){
+        var img=new Image();
+        img.onload=function(){
+          var w=img.width,h=img.height;
+          if(w>maxPx||h>maxPx){
+            if(w>h){h=Math.round(h*maxPx/w);w=maxPx;}
+            else{w=Math.round(w*maxPx/h);h=maxPx;}
+          }
+          var canvas=document.createElement('canvas');
+          canvas.width=w;canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          var dataUrl=canvas.toDataURL('image/jpeg',quality);
+          resolve({dataUrl:dataUrl,base64:dataUrl.split(',')[1],mimeType:'image/jpeg'});
+        };
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  var phInp=document.getElementById('aura-ph-inp');
+  var phBtn=document.getElementById('aura-photo-btn');
+  phBtn.onclick=function(){ phInp.click(); };
+  phInp.addEventListener('change',function(){
+    var file=phInp.files[0];
+    if(!file)return;
+    phInp.value='';
+    if(!file.type.startsWith('image/')){
+      renderBot('Só consigo receber imagens. Pode tentar novamente?');
+      return;
+    }
+    (async function(){
+      var compressed=await compressImg(file,800,0.75);
+      var dataUrl=compressed.dataUrl;
+      var el=document.createElement('div');
+      el.className='am u';
+      var img=document.createElement('img');
+      img.src=dataUrl;
+      img.style.cssText='max-width:180px;max-height:180px;border-radius:8px;display:block;margin-top:4px';
+      el.appendChild(img);
+      msgs.appendChild(el);scr();
+      try{
+        var r=await fetch(C.uploadUrl,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({base64:compressed.base64,mimeType:'image/jpeg',clienteId:savedLeadId||null})
+        });
+        var d=await r.json();
+        if(d.url){
+          pendingRefs.push(d.url);
+          history.push({role:'user',content:'[O cliente enviou uma imagem de referência]'});
+          await askAura(null);
+        } else {
+          renderBot('Recebi a imagem, mas tive um problema ao salvá-la. Pode tentar novamente?');
+        }
+      }catch(err){
+        console.warn('[Aura] upload error:',err);
+        renderBot('Tive uma instabilidade ao receber a imagem. Pode tentar novamente?');
+      }
+    })();
+  });
+})();
+</script>
+</body>
+</html>
