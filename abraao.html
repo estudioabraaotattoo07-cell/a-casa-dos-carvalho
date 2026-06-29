@@ -50,26 +50,36 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
 }
 
 /* ── BIO SECTION ── */
+#bio-fotos{display:flex;gap:4px;width:100%}
 #bio-rosto{
-  width:110px;height:110px;border-radius:50%;object-fit:cover;object-position:center top;
-  border:1.5px solid rgba(201,168,76,0.4);flex-shrink:0;
+  flex:1;aspect-ratio:3/4;object-fit:cover;object-position:center top;
+  border-radius:6px;border:1.5px solid rgba(201,168,76,0.4);
+  cursor:pointer;transition:opacity .2s;
 }
-#bio-thumbs{display:flex;gap:8px}
+#bio-rosto:hover{opacity:.85}
+#bio-thumbs{display:flex;gap:4px;flex:3}
 #bio-thumbs img{
-  width:72px;height:90px;object-fit:cover;border-radius:6px;
+  flex:1;aspect-ratio:3/4;object-fit:cover;border-radius:6px;
   border:0.5px solid rgba(255,255,255,0.06);
-  transition:border-color .2s;
+  cursor:pointer;transition:opacity .2s;
 }
-#bio-thumbs img:hover{border-color:rgba(201,168,76,0.4)}
-#bio-text{text-align:center}
+#bio-thumbs img:hover{opacity:.85;border-color:rgba(201,168,76,0.4)}
+#bio-text{text-align:center;width:100%}
 #bio-eyebrow{
   font-size:7px;font-weight:500;letter-spacing:4px;text-transform:uppercase;
-  color:var(--gold);margin-bottom:8px;
+  color:var(--gold);margin-bottom:6px;
 }
 #bio-headline{
-  font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:300;
+  font-family:"Cormorant Garamond",serif;font-size:16px;font-weight:300;
   color:var(--off);line-height:1.3;
-  /* ── SUBSTITUA ESTE TEXTO PELO TEXTO FINAL DO ABRAÃO ── */
+}
+/* ── LIGHTBOX ── */
+#lb{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:none;align-items:center;justify-content:center}
+#lb.open{display:flex}
+#lb img{max-width:50vw;max-height:80vh;object-fit:contain;border-radius:8px}
+#lb-close{position:absolute;top:16px;right:20px;width:38px;height:38px;border:0.5px solid rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px;border-radius:4px}
+@media(max-width:767px){
+  #lb img{max-width:90vw;max-height:70vh}
 }
 
 /* ── CHAT EMBEDDED ── */
@@ -140,20 +150,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
   #page{flex-direction:column}
   #bio{
     width:100%;flex-shrink:0;
-    flex-direction:row;align-items:center;
-    padding:12px 16px;gap:12px;
+    flex-direction:column;align-items:center;
+    padding:10px 12px 8px;gap:8px;
     border-right:none;border-bottom:0.5px solid rgba(255,255,255,0.06);
     height:auto;
-    /* bio ocupa no máximo 28% da tela */
-    max-height:28dvh;
-    overflow:hidden;
   }
-  #bio-rosto{width:56px;height:56px;flex-shrink:0}
-  #bio-thumbs{gap:5px;flex-shrink:0}
-  #bio-thumbs img{width:44px;height:56px;border-radius:4px}
-  #bio-text{text-align:left;min-width:0}
-  #bio-eyebrow{font-size:6px;letter-spacing:3px;margin-bottom:4px}
-  #bio-headline{font-size:13px;line-height:1.35}
+  #bio-fotos{gap:3px}
+  #bio-eyebrow{font-size:6px;letter-spacing:2px;margin-bottom:3px}
+  #bio-headline{font-size:12px}
   #chat-wrap{flex:1;min-height:0}
 }
 </style>
@@ -164,17 +168,25 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
 
   <!-- ── BIO ── -->
   <div id="bio">
-    <img id="bio-rosto" src="rosto.jpg" alt="Abraão de Carvalho">
-    <div id="bio-thumbs">
-      <img src="1.jpg" alt="">
-      <img src="2.jpg" alt="">
-      <img src="4.jpg" alt="">
-      <img src="7.jpg" alt="">
+    <div id="bio-fotos">
+      <img id="bio-rosto" src="rosto.jpg" alt="Abraão de Carvalho" onclick="abrirLb(this.src)">
+      <div id="bio-thumbs">
+        <img src="1.jpg" alt="" onclick="abrirLb(this.src)">
+        <img src="2.jpg" alt="" onclick="abrirLb(this.src)">
+        <img src="4.jpg" alt="" onclick="abrirLb(this.src)">
+        <img src="7.jpg" alt="" onclick="abrirLb(this.src)">
+      </div>
     </div>
     <div id="bio-text">
       <div id="bio-eyebrow">Abraão de Carvalho Aguiar · A Casa dos Carvalho</div>
       <div id="bio-headline">Projetos autorais · Direção artística · Profundidade</div>
     </div>
+  </div>
+
+  <!-- ── LIGHTBOX ── -->
+  <div id="lb" onclick="fecharLb()">
+    <div id="lb-close">✕</div>
+    <img id="lb-img" src="" alt="">
   </div>
 
   <!-- ── CHAT WRAP ── -->
@@ -495,6 +507,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
       reader.readAsDataURL(file);
     });
   }
+
+  // ── Lightbox ──────────────────────────────────────────────────────────────
+  var lbEl=document.getElementById('lb');
+  var lbImg=document.getElementById('lb-img');
+  window.abrirLb=function(src){lbImg.src=src;lbEl.classList.add('open');};
+  window.fecharLb=function(){lbEl.classList.remove('open');lbImg.src='';};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharLb();});
 
   var phInp=document.getElementById('aura-ph-inp');
   var phBtn=document.getElementById('aura-photo-btn');
