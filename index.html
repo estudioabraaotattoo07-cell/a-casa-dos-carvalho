@@ -911,7 +911,8 @@ initStrip('strip-camilla',CAMILLA);
       nascimento:ld.nascimento||'',
       referencias:pendingRefs,
       orig:origemUtm||'',
-      obs:ld.obs||''
+      obs:ld.obs||'',
+      chat_log:history.slice()
     };
     console.log('[Aura] saveLead:',JSON.stringify(payload));
     fetch(C.leadUrl,{
