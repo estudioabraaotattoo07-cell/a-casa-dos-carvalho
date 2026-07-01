@@ -486,22 +486,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     if(texto){
       leadData.ideia=texto;
       history.push({role:'user',content:texto});
-      var dots=showDots();
-      try{
-        var res=await fetch(C.apiUrl,{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({messages:history,campanhas:campanhasAtivas,contexto:C.contexto})});
-        dots.remove();
-        if(res.ok){
-          var data=await res.json();
-          var text=data.text||'';
-          if(text){ renderBot(text); history.push({role:'assistant',content:text}); }
-          processarRespostaAPI(data);
-        }
-      }catch(e){ dots.remove(); console.warn('[Aura] erro API ideia:',e); }
     }
-    atualizarLead();
-    dis(false);
-    if(cb) setTimeout(cb, texto?900:0);
+    // Resposta fixa — sem chamar API para evitar dupla pergunta de região
+    var ackMsg=file?'Recebi! Anotei sua ideia e a referência. 🖤':'Anotado! Vou repassar sua ideia para o Abraão. 🖤';
+    botAnimado(ackMsg, function(){
+      atualizarLead();
+      dis(false);
+      if(cb) cb();
+    });
   }
 
   function passo4(){
