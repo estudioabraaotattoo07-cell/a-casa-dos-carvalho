@@ -143,6 +143,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
 .ask:hover{background:#1e1e1e;color:#999}
 #aura-ph-inp{display:none}
 
+/* ── FLUXO GUIADO — botões ── */
+.flow-btns{display:flex;flex-wrap:wrap;gap:7px;align-self:flex-start;max-width:92%;padding:2px 0 4px 0}
+.flow-btn{background:#181818;border:1px solid rgba(201,168,76,0.35);color:#C9A84C;border-radius:20px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans','Segoe UI',sans-serif;transition:all .15s;white-space:nowrap}
+.flow-btn:hover{background:rgba(201,168,76,0.1);border-color:#C9A84C}
+
 /* ── MOBILE ── */
 @media(max-width:767px){
   #page{flex-direction:column}
@@ -197,7 +202,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
       <input type="file" id="aura-ph-inp" accept="image/*">
       <div id="aura-inp-area">
         <button id="aura-photo-btn" title="Enviar foto de referência">📷</button>
-        <textarea id="aura-inp" placeholder="Digite aqui..." rows="1"></textarea>
+        <textarea id="aura-inp" placeholder="ex: João Silva, 27 99999-0000" rows="1"></textarea>
         <button id="aura-send">↑</button>
       </div>
     </div>
@@ -220,7 +225,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
   };
 
   var history=[];
-  var leadSaved=false;
   var leadSavedKey='';
   var leadData={};
   var pendingRefs=[];
@@ -231,6 +235,13 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
   var studioTelAtual='';
   var waLinkOferecido=false;
 
+  // Fluxo guiado
+  var fluxoEtapa=0;
+  var fluxoEnviarOverride=null;
+  var emailTimerFired=false;
+  var pendingFile=null;
+
+  // ── Config / campanha ─────────────────────────────────────────────────────
   function carregarConfig(){
     fetch('https://inq-saas.vercel.app/api/config').then(function(r){
       return r.ok?r.json():null;
@@ -239,72 +250,53 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     }).catch(function(){});
   }
 
-  function montarLinkWhatsApp(ld,tel){
-    var partes=['Olá! Sou '+(ld.nome||'')];
-    if(ld.ideia) partes.push('conversei com a Aura sobre uma tatuagem de '+ld.ideia);
-    if(ld.regiao) partes.push('na região: '+ld.regiao);
-    if(ld.artista) partes.push('Artista de interesse: '+ld.artista);
-    if(ld.orcamento) partes.push('Orçamento que separei: '+ld.orcamento);
-    if(ld.horario_ligacao) partes.push('Melhor horário para me ligarem: '+ld.horario_ligacao);
-    if(ld.email) partes.push('Meu e-mail: '+ld.email);
-    var num=tel||studioTelAtual||'';
-    return 'https://wa.me/55'+num+'?text='+encodeURIComponent(partes.join('. ')+'.');
-  }
-
   function carregarCampanhas(){
     if(campanhasAtivas.length>0) return;
     fetch('https://inq-saas.vercel.app/api/campanhas-ativas').then(function(r){
       return r.ok?r.json():null;
     }).then(function(d){
-      if(d && Array.isArray(d.campanhas)) campanhasAtivas=d.campanhas;
+      if(d&&Array.isArray(d.campanhas)) campanhasAtivas=d.campanhas;
     }).catch(function(){});
   }
 
+  function montarMsgWA(ld){
+    var ref='—';
+    var obs=ld.obs||'';
+    if(obs.indexOf('referência visual')!==-1) ref='Enviada no chat';
+    else if(obs.indexOf('ideias')!==-1) ref='Tem ideias — descreveu no chat';
+    else if(obs.indexOf('confia')!==-1) ref='Confia totalmente no artista';
+    return [
+      'Olá Abraão! Sou '+(ld.nome||'')+', acabei de solicitar um atendimento pela Aura da Casa dos Carvalho.',
+      '',
+      'Serviço: '+(ld.servico||'—'),
+      'Região: '+(ld.regiao||'—'),
+      'Orçamento: '+(ld.orcamento||'—'),
+      'Referência: '+ref,
+      'Melhor horário: '+(ld.horario_ligacao||'—'),
+    ].join('\n');
+  }
+
+  // ── DOM refs ──────────────────────────────────────────────────────────────
   var msgs=document.getElementById('aura-msgs');
   var inp=document.getElementById('aura-inp');
   var snd=document.getElementById('aura-send');
+  var phBtn=document.getElementById('aura-photo-btn');
+  var phInp=document.getElementById('aura-ph-inp');
 
-  // Greeting — sem chamada à API, hardcoded, custo zero
-  var GREETING_TEXT='Olá! Aqui é a Aura, assistente do Abraão Tattoo. Vamos precisar de algumas informações para continuar, mas pode ficar tranquilo — você está em um ambiente seguro. 🔒\n\nVamos começar pelo que importa: você já tem ideia da tatuagem que quer fazer?';
-  (function iniciar(){
-    carregarCampanhas();
-    carregarConfig();
-    setTimeout(function(){
-      var el=document.createElement('div');
-      el.className='am b';
-      el.textContent=GREETING_TEXT;
-      msgs.appendChild(el);
-      msgs.scrollTop=msgs.scrollHeight;
-      history.push({role:'assistant',content:GREETING_TEXT});
-    },400);
-  })();
-
-  var WA_ICON_SVG='<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#fff;flex-shrink:0">'
-    +'<path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>'
-    +'<path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.857L.057 23.571c-.073.272.172.517.444.444l5.792-1.463A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.012-1.374l-.36-.214-3.733.943.979-3.646-.235-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182c5.431 0 9.818 4.388 9.818 9.818 0 5.431-4.387 9.818-9.818 9.818z"/>'
-    +'</svg>';
-
-  function renderBot(txt){
+  // ── UI helpers ────────────────────────────────────────────────────────────
+  function botMsg(txt){
     var el=document.createElement('div');
     el.className='am b';
-    var html=txt.replace(/(https?:\/\/[^\s<\[]+)/g,function(url){
-      return '<a href="'+url+'" target="_blank" rel="noopener" style="color:#C9A84C;word-break:break-all;">'+url+'</a>';
-    });
-    if(html.indexOf('[WA_LINK]')!==-1&&!waLinkOferecido){
-      waLinkOferecido=true;
-      var waHref=montarLinkWhatsApp(leadData,studioTelAtual);
-      var waBtn='<a href="'+waHref+'" target="_blank" rel="noopener" '
-        +'style="display:inline-flex;align-items:center;gap:10px;margin-top:12px;'
-        +'padding:12px 20px;background:#25D366;color:#fff;border-radius:28px;'
-        +'text-decoration:none;font-weight:600;font-size:0.9em;box-shadow:0 2px 12px rgba(37,211,102,0.35);">'
-        +WA_ICON_SVG
-        +'Falar agora no WhatsApp — resposta rápida da nossa equipe</a>';
-      html=html.replace('[WA_LINK]',waBtn);
-    }else{
-      html=html.replace(/\[WA_LINK\]/g,'');
-    }
-    html=html.replace(/\n/g,'<br>');
-    el.innerHTML=html;
+    el.textContent=txt;
+    msgs.appendChild(el);
+    scr();
+    return el;
+  }
+
+  function usr(txt){
+    var el=document.createElement('div');
+    el.className='am u';
+    el.textContent=txt;
     msgs.appendChild(el);scr();
   }
 
@@ -316,75 +308,348 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     return td;
   }
 
-  function showTypingDelay(txt){
-    return new Promise(function(ok){
-      setTimeout(ok, Math.min(600+txt.length*6, 2000));
-    });
+  function botAnimado(txt,cb){
+    var td=showDots();
+    setTimeout(function(){
+      td.remove();
+      botMsg(txt);
+      history.push({role:'assistant',content:txt});
+      if(cb) cb();
+    }, Math.min(500+txt.length*5,1600));
   }
 
-  function usr(txt){
-    var el=document.createElement('div');
-    el.className='am u';
-    el.textContent=txt;
-    msgs.appendChild(el);scr();
+  function renderBotoes(opcoes,onClique){
+    var wrap=document.createElement('div');
+    wrap.className='flow-btns';
+    opcoes.forEach(function(op){
+      var b=document.createElement('button');
+      b.className='flow-btn';
+      b.textContent=op;
+      b.onclick=function(){
+        wrap.remove();
+        usr(op);
+        onClique(op);
+      };
+      wrap.appendChild(b);
+    });
+    msgs.appendChild(wrap);
+    scr();
+    return wrap;
   }
 
   function scr(){msgs.scrollTop=msgs.scrollHeight;}
-  function dis(v){inp.disabled=v;snd.disabled=v;inp.placeholder=v?'…':'Digite aqui...';}
+  function dis(v){inp.disabled=v;snd.disabled=v;inp.placeholder=inp.placeholder;}
 
+  var WA_ICON_SVG='<svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="fill:#fff;flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.535 5.857L.057 23.571c-.073.272.172.517.444.444l5.792-1.463A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.012-1.374l-.36-.214-3.733.943.979-3.646-.235-.374A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182c5.431 0 9.818 4.388 9.818 9.818 0 5.431-4.387 9.818-9.818 9.818z"/></svg>';
+
+  function renderBot(txt){
+    var el=document.createElement('div');
+    el.className='am b';
+    var html=txt.replace(/(https?:\/\/[^\s<\[]+)/g,function(url){
+      return '<a href="'+url+'" target="_blank" rel="noopener" style="color:#C9A84C;word-break:break-all;">'+url+'</a>';
+    });
+    if(html.indexOf('[WA_LINK]')!==-1&&!waLinkOferecido){
+      waLinkOferecido=true;
+      var waHref='https://wa.me/55'+studioTelAtual+'?text='+encodeURIComponent(montarMsgWA(leadData));
+      var waBtn='<a href="'+waHref+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;margin-top:12px;padding:12px 20px;background:#25D366;color:#fff;border-radius:28px;text-decoration:none;font-weight:600;font-size:0.9em;box-shadow:0 2px 12px rgba(37,211,102,0.35);">'+WA_ICON_SVG+'Falar agora no WhatsApp — resposta rápida da nossa equipe</a>';
+      html=html.replace('[WA_LINK]',waBtn);
+    }else{
+      html=html.replace(/\[WA_LINK\]/g,'');
+    }
+    html=html.replace(/\n/g,'<br>');
+    el.innerHTML=html;
+    msgs.appendChild(el);scr();
+  }
+
+  // ── Início ────────────────────────────────────────────────────────────────
+  var GREETING='Olá! Sou a Aura, assistente da Casa dos Carvalho. 🖤\n\nVou registrar sua solicitação em menos de 1 minuto.\nAo final, você recebe um link direto para conversar pelo WhatsApp.\n\nPara começar, me passa seu nome e WhatsApp com DDD:';
+
+  (function iniciar(){
+    carregarCampanhas();
+    carregarConfig();
+    setTimeout(function(){
+      botMsg(GREETING);
+      history.push({role:'assistant',content:GREETING});
+      inp.placeholder='ex: João Silva, 27 99999-0000';
+      phBtn.style.display='none';
+    },400);
+  })();
+
+  // ── FLUXO GUIADO ──────────────────────────────────────────────────────────
+
+  function passo2(){
+    fluxoEtapa=2;
+    var fn=(leadData.nome||'').trim().split(' ')[0];
+    botAnimado('Perfeito, '+fn+'! O que você está buscando?', function(){
+      renderBotoes(['🖤 Tatuagem','💉 Piercing','💬 Consulta'], function(op){
+        var servico=op.replace(/^[^\w]+/,'').toLowerCase();
+        leadData.servico=servico;
+        history.push({role:'user',content:op});
+        atualizarLead();
+        if(servico==='tatuagem') passo3();
+        else { leadData.obs=(leadData.obs||'')+'Serviço: '+servico+'. '; passo4(); }
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passo3(){
+    fluxoEtapa=3;
+    botAnimado('Como está sua ideia?', function(){
+      renderBotoes([
+        '📸 Tenho referência',
+        '💡 Tenho algumas ideias, mas nada concreto ainda',
+        '🖤 Confio totalmente no artista'
+      ], function(op){
+        history.push({role:'user',content:op});
+        if(op.indexOf('referência')!==-1){
+          leadData.obs=(leadData.obs||'')+'Referência: tem referência visual. ';
+          passo3A();
+        } else if(op.indexOf('ideias')!==-1){
+          leadData.obs=(leadData.obs||'')+'Referência: tem ideias, quer ajuda para criar a arte. ';
+          passo3B();
+        } else {
+          leadData.obs=(leadData.obs||'')+'Referência: confia totalmente no artista. ';
+          passo3C();
+        }
+        atualizarLead();
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passo3A(){
+    fluxoEtapa='3a';
+    botAnimado('Ótimo! Pode descrever o que você imagina e anexar sua referência em imagem.', function(){
+      inp.placeholder='ex: quero algo no estilo blackwork, traços finos, inspirado em natureza...';
+      phBtn.style.display='flex';
+      pendingFile=null;
+      fluxoEnviarOverride=function(){
+        var txt=inp.value.trim();
+        if(!txt&&!pendingFile) return;
+        inp.value='';inp.style.height='auto';
+        if(txt) usr(txt);
+        var f=pendingFile; pendingFile=null;
+        removePendingPreview();
+        fluxoEnviarOverride=null;
+        phBtn.style.display='none';
+        enviarTextoEImagem(txt,f,function(){ passo4(); });
+      };
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passo3B(){
+    fluxoEtapa='3b';
+    botAnimado('Perfeito! Me conta o que você tem em mente — pode ser uma descrição, uma sensação, uma referência de outra área... qualquer detalhe ajuda na criação.', function(){
+      inp.placeholder='ex: quero algo que remeta à liberdade, talvez com elementos geométricos ou da natureza...';
+      phBtn.style.display='flex';
+      pendingFile=null;
+      fluxoEnviarOverride=function(){
+        var txt=inp.value.trim();
+        if(!txt&&!pendingFile) return;
+        inp.value='';inp.style.height='auto';
+        if(txt) usr(txt);
+        var f=pendingFile; pendingFile=null;
+        removePendingPreview();
+        fluxoEnviarOverride=null;
+        phBtn.style.display='none';
+        enviarTextoEImagem(txt,f,function(){ passo4(); });
+      };
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passo3C(){
+    fluxoEtapa='3c';
+    botAnimado('Que confiança incrível! 🖤 O Abraão vai adorar criar algo único e especial para você.', function(){
+      passo4();
+    });
+    dis(true);
+  }
+
+  async function enviarTextoEImagem(texto,file,cb){
+    dis(true);
+    if(file){
+      try{
+        var compressed=await compressImg(file,800,0.75);
+        var r=await fetch(C.uploadUrl,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({base64:compressed.base64,mimeType:'image/jpeg',clienteId:savedLeadId||null})});
+        var d=await r.json();
+        if(d.url) pendingRefs.push(d.url);
+      }catch(e){ console.warn('[Aura] upload erro:',e); }
+    }
+    if(texto){
+      leadData.ideia=texto;
+      history.push({role:'user',content:texto});
+      var dots=showDots();
+      try{
+        var res=await fetch(C.apiUrl,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({messages:history,campanhas:campanhasAtivas,contexto:C.contexto})});
+        dots.remove();
+        if(res.ok){
+          var data=await res.json();
+          var text=data.text||'';
+          if(text){ renderBot(text); history.push({role:'assistant',content:text}); }
+          processarRespostaAPI(data);
+        }
+      }catch(e){ dots.remove(); console.warn('[Aura] erro API ideia:',e); }
+    }
+    atualizarLead();
+    dis(false);
+    if(cb) setTimeout(cb, texto?900:0);
+  }
+
+  function passo4(){
+    fluxoEtapa=4;
+    botAnimado('Onde você imagina sua tatuagem?', function(){
+      inp.placeholder='ex: braço, costela, perna, costas, mão...';
+      phBtn.style.display='none';
+      fluxoEnviarOverride=function(){
+        var txt=inp.value.trim(); if(!txt) return;
+        inp.value='';inp.style.height='auto';
+        usr(txt);
+        leadData.regiao=txt;
+        history.push({role:'user',content:'Região: '+txt});
+        fluxoEnviarOverride=null;
+        atualizarLead();
+        passo5();
+      };
+      dis(false);
+    });
+    dis(true);
+  }
+
+  var RESP_ORC={
+    'Até R$300':'Entendido! Existem possibilidades bacanas nessa faixa. O Abraão vai te orientar pessoalmente sobre o que é possível criar — pode ter certeza que a entrega supera as expectativas. 😊',
+    'Até R$1.000':'Ótima faixa! Abre espaço para trabalhos com bom tamanho e riqueza de detalhes. O Abraão vai apresentar as melhores possibilidades para o seu projeto. 🖤',
+    'Até R$5.000':'Excelente investimento! Essa faixa permite projetos com alta complexidade e acabamento impecável. O Abraão dedica atenção especial a trabalhos assim. ✦',
+    'Acima de R$5.000':'Você está pronto para um projeto de alto impacto. 🖤 O Abraão dedica atenção total a trabalhos assim — algo pensado do zero, feito para durar uma vida.',
+    'Ainda não sei':'Sem problema! O Abraão vai conversar pessoalmente com você sobre as possibilidades e o que faz sentido para o seu projeto. 😊'
+  };
+
+  function passo5(){
+    fluxoEtapa=5;
+    botAnimado('Qual é o valor que você se preparou para investir no seu trabalho?', function(){
+      renderBotoes(Object.keys(RESP_ORC), function(op){
+        leadData.orcamento=op;
+        history.push({role:'user',content:'Orçamento: '+op});
+        atualizarLead();
+        botAnimado(RESP_ORC[op], function(){ passo6(); });
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passo6(){
+    fluxoEtapa=6;
+    botAnimado('Digite seu melhor e-mail para receber a confirmação da sua entrada no nosso ecossistema: 📩', function(){
+      inp.placeholder='ex: seuemail@gmail.com';
+      phBtn.style.display='none';
+      var pularBtn=document.createElement('button');
+      pularBtn.className='flow-btn';
+      pularBtn.id='btn-pular-email';
+      pularBtn.textContent='Pular';
+      document.getElementById('aura-inp-area').insertBefore(pularBtn,inp);
+      function finalizarEmail(email){
+        var pb=document.getElementById('btn-pular-email');
+        if(pb) pb.remove();
+        fluxoEnviarOverride=null;
+        if(email){
+          usr(email);
+          leadData.email=email;
+          history.push({role:'user',content:'E-mail: '+email});
+          if(emailTimerFired) sendEmails(leadData);
+        } else {
+          usr('Pular');
+          history.push({role:'user',content:'(pulou e-mail)'});
+        }
+        atualizarLead();
+        passo62();
+      }
+      pularBtn.onclick=function(){ finalizarEmail(''); };
+      fluxoEnviarOverride=function(){
+        var txt=inp.value.trim(); if(!txt) return;
+        inp.value='';inp.style.height='auto';
+        finalizarEmail(txt);
+      };
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passo62(){
+    fluxoEtapa=62;
+    botAnimado('Qual o melhor horário para o Abraão entrar em contato com você?', function(){
+      renderBotoes(['🌅 Manhã','☀️ Tarde','🌙 Noite'], function(op){
+        var hor=op.replace(/^[^\w]+/,'');
+        leadData.horario_ligacao=hor;
+        leadData.obs=(leadData.obs||'')+'Horário preferido: '+hor+'. ';
+        history.push({role:'user',content:'Melhor horário: '+hor});
+        atualizarLead();
+        passo7();
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passo7(){
+    fluxoEtapa=7;
+    var fn=(leadData.nome||'').trim().split(' ')[0];
+    var txt='🎉 Pronto, '+fn+'! Sua solicitação foi registrada e o Abraão já foi notificado.\n\nSe quiser adiantar a conversa, clique abaixo — a mensagem já vai pré-preenchida para ele:';
+    botAnimado(txt, function(){
+      var waHref='https://wa.me/55'+studioTelAtual+'?text='+encodeURIComponent(montarMsgWA(leadData));
+      var waWrap=document.createElement('div');
+      waWrap.style.cssText='padding:2px 0 8px 0;align-self:flex-start;';
+      waWrap.innerHTML='<a href="'+waHref+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;padding:12px 20px;background:#25D366;color:#fff;border-radius:28px;text-decoration:none;font-weight:600;font-size:0.9em;box-shadow:0 2px 12px rgba(37,211,102,.35);">'+WA_ICON_SVG+' 💬 Falar com o Abraão agora</a>';
+      msgs.appendChild(waWrap); scr();
+      waLinkOferecido=true;
+      fluxoEtapa=99;
+      inp.placeholder='Alguma dúvida? Pode perguntar aqui...';
+      phBtn.style.display='flex';
+      dis(false);
+    });
+    dis(true);
+  }
+
+  // ── API — texto livre (passo 0 e etapa 99) ────────────────────────────────
   async function askAura(userMsg){
     dis(true);
-    if(userMsg!==null){
-      history.push({role:'user',content:userMsg});
-    }
+    if(userMsg!==null) history.push({role:'user',content:userMsg});
     var dots=showDots();
     try{
       var res=await fetch(C.apiUrl,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({messages:history, campanhas:campanhasAtivas, contexto:C.contexto})
+        body:JSON.stringify({messages:history,campanhas:campanhasAtivas,contexto:C.contexto})
       });
       dots.remove();
       if(!res.ok) throw new Error('status '+res.status);
       var data=await res.json();
       var text=data.text||'Ops, tive um problema. Pode tentar novamente?';
-      await showTypingDelay(text);
+      await new Promise(function(ok){ setTimeout(ok, Math.min(600+text.length*6,2000)); });
       renderBot(text);
       history.push({role:'assistant',content:text});
-      if(data.lead){
-        var ld=data.lead;
-        if(ld.nome && ld.tel){
-          var ldKey=ld.nome+'|'+ld.tel+'|'+ld.email+'|'+ld.artista+'|'+ld.insta+'|'+ld.ideia;
-          if(ldKey!==leadSavedKey){
-            leadSavedKey=ldKey;
-            leadData=ld;
-            saveLead(ld);
-          }
-          if(!leadSaved && ld.email && ld.ideia){
-            leadSaved=true;
-            sendEmails(ld);
-          }
-        }
+      processarRespostaAPI(data);
+      // Passo 0: nome+tel capturados → avança fluxo
+      if(fluxoEtapa===0 && data.lead && data.lead.nome && data.lead.tel){
+        leadData.nome=data.lead.nome;
+        leadData.tel=data.lead.tel;
+        saveLead(leadData);
+        // Timer 2 minutos para e-mail
+        setTimeout(function(){
+          emailTimerFired=true;
+          if(leadData.email) sendEmails(leadData);
+        }, 120000);
+        setTimeout(passo2, 600);
       }
-      if(data.campanha && data.campanha.id && !campanhaVinculada){
-        campanhaVinculada=data.campanha;
-        vincularCampanha(data.campanha.id);
-      }
-      if(data.studio_tel) studioTelAtual=data.studio_tel;
-      if(data.agendamento){
-        var tipoAgend=data.agendamento_tipo||'';
-        if(typeof fbq==='function'){
-          if(tipoAgend==='consulta') fbq('track','Contact',{origem:origemUtm});
-          else fbq('track','Schedule',{origem:origemUtm});
-        }
-        if(typeof gtag==='function') gtag('event','conversion',{'send_to':'AW-18264070158/Gi3eCNrg9sMcEI6w_oRE'});
-        var tipoEvento=tipoAgend==='consulta'?'Consulta':'Sessao';
-        fetch('https://inq-saas.vercel.app/api/registrar-evento',{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({tipo_evento:tipoEvento,origem:origemUtm,cliente_id:savedLeadId||null})
-        }).catch(function(){});
-      }
-    } catch(e){
+    }catch(e){
       dots.remove();
       renderBot('Desculpe, tive uma instabilidade. Pode tentar novamente?');
       console.warn('[Aura] chat error:',e);
@@ -393,25 +658,67 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     inp.focus();
   }
 
+  function processarRespostaAPI(data){
+    if(data.lead){
+      var ld=data.lead;
+      if(ld.nome && ld.tel){
+        var ldKey=ld.nome+'|'+ld.tel+'|'+(ld.email||'')+'|'+(ld.ideia||'');
+        if(ldKey!==leadSavedKey){
+          leadSavedKey=ldKey;
+          Object.assign(leadData,ld);
+          saveLead(leadData);
+        }
+      }
+    }
+    if(data.campanha && data.campanha.id && !campanhaVinculada){
+      campanhaVinculada=data.campanha;
+      vincularCampanha(data.campanha.id);
+    }
+    if(data.studio_tel) studioTelAtual=data.studio_tel;
+    if(data.agendamento){
+      var tipoAgend=data.agendamento_tipo||'';
+      if(typeof fbq==='function'){
+        if(tipoAgend==='consulta') fbq('track','Contact',{origem:origemUtm});
+        else fbq('track','Schedule',{origem:origemUtm});
+      }
+      if(typeof gtag==='function') gtag('event','conversion',{'send_to':'AW-18264070158/Gi3eCNrg9sMcEI6w_oRE'});
+      fetch('https://inq-saas.vercel.app/api/registrar-evento',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tipo_evento:tipoAgend==='consulta'?'Consulta':'Sessao',origem:origemUtm,cliente_id:savedLeadId||null})
+      }).catch(function(){});
+    }
+  }
+
+  // ── Lead / CRM ────────────────────────────────────────────────────────────
+  function atualizarLead(){
+    if(!leadData.nome || !leadData.tel) return;
+    var ldKey=(leadData.nome||'')+'|'+(leadData.tel||'')+'|'+(leadData.email||'')+'|'+(leadData.ideia||'')+'|'+(leadData.regiao||'')+'|'+(leadData.orcamento||'')+'|'+(leadData.horario_ligacao||'');
+    if(ldKey===leadSavedKey) return;
+    leadSavedKey=ldKey;
+    saveLead(leadData);
+  }
+
   function saveLead(ld){
-    var payload={
-      nome:ld.nome||'',
-      tel:(ld.tel||'').replace(/\D/g,''),
-      email:ld.email||'',
-      idea:ld.ideia||'',
-      artista:ld.artista||null,
-      insta:ld.insta||'',
-      regiao:ld.regiao||'',
-      nascimento:ld.nascimento||'',
-      referencias:pendingRefs,
-      orig:origemUtm||'',
-      obs:ld.obs||'',
-      chat_log:history.slice()
-    };
     fetch(C.leadUrl,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
+      body:JSON.stringify({
+        nome:ld.nome||'',
+        tel:(ld.tel||'').replace(/\D/g,''),
+        email:ld.email||'',
+        idea:ld.ideia||'',
+        artista:ld.artista||null,
+        insta:ld.insta||'',
+        regiao:ld.regiao||'',
+        nascimento:ld.nascimento||'',
+        referencias:pendingRefs,
+        orig:origemUtm||'',
+        obs:ld.obs||'',
+        servico_interesse:ld.servico||'',
+        orcamento:ld.orcamento||'',
+        horario_ligacao:ld.horario_ligacao||'',
+        chat_log:history.slice()
+      })
     }).then(function(r){
       if(!r.ok){r.text().then(function(t){console.warn('[Aura] lead error:',t);});return;}
       return r.json();
@@ -423,9 +730,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({tipo_evento:'Lead',origem:origemUtm,cliente_id:savedLeadId})
         }).catch(function(){});
-        if(campanhaVinculada && campanhaVinculada.id){
-          vincularCampanha(campanhaVinculada.id);
-        }
+        if(campanhaVinculada && campanhaVinculada.id) vincularCampanha(campanhaVinculada.id);
       }
     }).catch(function(e){console.warn('[Aura] lead fetch error:',e);});
   }
@@ -435,22 +740,23 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     fetch('https://inq-ink-system.vercel.app/api/vincular-campanha',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({clienteId:savedLeadId, campanhaId:campanhaId})
+      body:JSON.stringify({clienteId:savedLeadId,campanhaId:campanhaId})
     }).catch(function(e){console.warn('[Aura] vincularCampanha error:',e);});
   }
 
   function sendEmails(ld){
-    var pn=ld.artista||'Abraão';
     var nome=ld.nome||'';
     var fn=nome.trim().split(' ')[0];
     var lh='<div style="font-family:Arial,sans-serif;max-width:600px;color:#222">'+
       '<h2 style="color:#C9A84C;border-bottom:2px solid #C9A84C;padding-bottom:8px">✦ Novo Lead — Aura / Abraão</h2>'+
       '<table style="border-collapse:collapse;width:100%">'+
       '<tr><td style="padding:8px;border-bottom:1px solid #eee;width:140px"><strong>Nome</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+nome+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>E-mail</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+ld.email+'</td></tr>'+
       '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WhatsApp</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+ld.tel+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Ideia</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.ideia||'—')+'</td></tr>'+
-      '<tr><td style="padding:8px"><strong>Artista</strong></td><td style="padding:8px">'+pn+'</td></tr>'+
+      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>E-mail</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.email||'—')+'</td></tr>'+
+      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Serviço</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.servico||'—')+'</td></tr>'+
+      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Região</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.regiao||'—')+'</td></tr>'+
+      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Orçamento</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.orcamento||'—')+'</td></tr>'+
+      '<tr><td style="padding:8px"><strong>Horário</strong></td><td style="padding:8px">'+(ld.horario_ligacao||'—')+'</td></tr>'+
       '</table></div>';
     fetch(C.px,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({apiKey:C.rk,from:C.fr,to:[C.eA],subject:'✦ Novo Lead (Abraão) — '+nome,html:lh})
@@ -458,18 +764,26 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     if(ld.email){
       var ch='<div style="font-family:Arial,sans-serif;max-width:600px;color:#222">'+
         '<h2 style="color:#C9A84C">✦ Casa dos Carvalho Tattoo</h2>'+
-        '<p>Olá, '+fn+'! Recebemos tudo certinho 🖤</p>'+
-        '<p>Sua ideia foi registrada e em breve o Abraão ou nossa equipe vai entrar em contato para cuidar de cada detalhe do seu projeto.</p>'+
-        '<p>Obrigado(a) por escolher a Casa dos Carvalho!</p>'+
-        '<p style="color:#888;font-size:12px">Casa dos Carvalho Tattoo — Vitória, ES</p></div>';
+        '<p>Olá, '+fn+'! Recebemos tudo certinho. 🖤</p>'+
+        '<p style="margin-top:12px"><strong>Resumo da sua solicitação:</strong></p>'+
+        '<table style="border-collapse:collapse;width:100%;margin-top:8px">'+
+        '<tr><td style="padding:6px;border-bottom:1px solid #eee;width:120px"><strong>Serviço</strong></td><td style="padding:6px;border-bottom:1px solid #eee">'+(ld.servico||'—')+'</td></tr>'+
+        '<tr><td style="padding:6px;border-bottom:1px solid #eee"><strong>Região</strong></td><td style="padding:6px;border-bottom:1px solid #eee">'+(ld.regiao||'—')+'</td></tr>'+
+        '<tr><td style="padding:6px"><strong>Orçamento</strong></td><td style="padding:6px">'+(ld.orcamento||'—')+'</td></tr>'+
+        '</table>'+
+        '<p style="margin-top:16px">Em breve o Abraão ou nossa equipe vai entrar em contato. 🖤</p>'+
+        '<p style="color:#888;font-size:12px;margin-top:12px">Casa dos Carvalho Tattoo — Vitória, ES</p></div>';
       fetch(C.px,{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({apiKey:C.rk,from:C.fr,to:[ld.email],subject:'✦ Recebemos sua mensagem!',html:ch})
+        body:JSON.stringify({apiKey:C.rk,from:C.fr,to:[ld.email],subject:'✦ Recebemos sua solicitação — Casa dos Carvalho',html:ch})
       }).catch(function(){});
     }
   }
 
+  // ── Send handler ──────────────────────────────────────────────────────────
   function send(){
-    var v=inp.value.trim();if(!v||inp.disabled)return;
+    if(inp.disabled) return;
+    if(fluxoEnviarOverride){ fluxoEnviarOverride(); return; }
+    var v=inp.value.trim(); if(!v) return;
     inp.value='';inp.style.height='auto';
     usr(v);
     askAura(v);
@@ -478,7 +792,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
   snd.onclick=send;
   inp.addEventListener('input',function(){this.style.height='auto';this.style.height=Math.min(this.scrollHeight,78)+'px';});
 
-  // ── Compressão + upload de imagem ─────────────────────────────────────────
+  // ── Imagem ────────────────────────────────────────────────────────────────
   function compressImg(file,maxPx,quality){
     return new Promise(function(resolve){
       var reader=new FileReader();
@@ -502,31 +816,53 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     });
   }
 
-  // ── Lightbox ──────────────────────────────────────────────────────────────
+  function removePendingPreview(){
+    var prev=document.getElementById('pending-img-preview');
+    if(prev) prev.remove();
+  }
+
   var lbEl=document.getElementById('lb');
   var lbImg=document.getElementById('lb-img');
   window.abrirLb=function(src){lbImg.src=src;lbEl.classList.add('open');};
   window.fecharLb=function(){lbEl.classList.remove('open');lbImg.src='';};
   document.addEventListener('keydown',function(e){if(e.key==='Escape')fecharLb();});
 
-  var phInp=document.getElementById('aura-ph-inp');
-  var phBtn=document.getElementById('aura-photo-btn');
   phBtn.onclick=function(){ phInp.click(); };
   phInp.addEventListener('change',function(){
     var file=phInp.files[0];
-    if(!file)return;
+    if(!file) return;
     phInp.value='';
     if(!file.type.startsWith('image/')){
       renderBot('Só consigo receber imagens. Pode tentar novamente?');
       return;
     }
+    // Passos 3A/3B: upload controlado — guarda em memória, exibe preview
+    if(fluxoEtapa==='3a'||fluxoEtapa==='3b'){
+      (async function(){
+        var compressed=await compressImg(file,800,0.75);
+        pendingFile=file;
+        removePendingPreview();
+        var prev=document.createElement('div');
+        prev.id='pending-img-preview';
+        prev.style.cssText='align-self:flex-end;margin-bottom:2px;';
+        var img=document.createElement('img');
+        img.src=compressed.dataUrl;
+        img.style.cssText='max-width:120px;max-height:120px;border-radius:8px;display:block;border:1px solid rgba(201,168,76,.3);';
+        var lbl=document.createElement('div');
+        lbl.textContent='📎 Aguardando envio...';
+        lbl.style.cssText='font-size:10px;color:#666;margin-top:3px;text-align:right;';
+        prev.appendChild(img); prev.appendChild(lbl);
+        msgs.appendChild(prev); scr();
+      })();
+      return;
+    }
+    // Etapa livre (99): comportamento original — envia imediatamente
     (async function(){
       var compressed=await compressImg(file,800,0.75);
-      var dataUrl=compressed.dataUrl;
       var el=document.createElement('div');
       el.className='am u';
       var img=document.createElement('img');
-      img.src=dataUrl;
+      img.src=compressed.dataUrl;
       img.style.cssText='max-width:180px;max-height:180px;border-radius:8px;display:block;margin-top:4px';
       el.appendChild(img);
       msgs.appendChild(el);scr();
