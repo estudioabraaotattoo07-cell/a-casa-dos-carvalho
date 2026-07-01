@@ -240,6 +240,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
   var fluxoEnviarOverride=null;
   var emailTimerFired=false;
   var pendingFile=null;
+  var p0Nome='';
+  var p0Tel='';
 
   // ── Config / campanha ─────────────────────────────────────────────────────
   function carregarConfig(){
@@ -774,22 +776,31 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     var v=inp.value.trim(); if(!v) return;
     inp.value='';inp.style.height='auto';
     usr(v);
-    // Passo 0: parseia nome+tel localmente, sem chamar API
+    // Passo 0: acumula nome e tel em turnos separados, sem chamar API
     if(fluxoEtapa===0){
       var parsed=parsePasso0(v);
-      if(parsed.nome && parsed.tel){
-        leadData.nome=parsed.nome;
-        leadData.tel=parsed.tel;
-        history.push({role:'user',content:v});
+      if(parsed.nome) p0Nome=parsed.nome;
+      if(parsed.tel) p0Tel=parsed.tel;
+      history.push({role:'user',content:v});
+
+      if(p0Nome && p0Tel){
+        // tem os dois — avança
+        leadData.nome=p0Nome;
+        leadData.tel=p0Tel;
         saveLead(leadData);
         setTimeout(function(){
           emailTimerFired=true;
           if(leadData.email) sendEmails(leadData);
         }, 120000);
         setTimeout(passo2, 300);
+      } else if(p0Nome && !p0Tel){
+        botAnimado('Obrigado, '+p0Nome.split(' ')[0]+'! Agora me passa seu WhatsApp com DDD:', function(){ dis(false); });
+        dis(true);
+      } else if(!p0Nome && p0Tel){
+        botAnimado('Ótimo! E qual é o seu nome?', function(){ dis(false); });
+        dis(true);
       } else {
-        // não conseguiu extrair — pede de novo
-        botAnimado('Não consegui identificar o WhatsApp. Pode me passar assim: "Nome Sobrenome, 27 99999-0000"?', function(){ dis(false); });
+        botAnimado('Não consegui identificar. Pode me passar assim: "João Silva, 27 99999-0000"?', function(){ dis(false); });
         dis(true);
       }
       return;
