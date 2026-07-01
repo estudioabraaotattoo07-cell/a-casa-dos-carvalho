@@ -618,7 +618,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     dis(true);
   }
 
-  // ── API — texto livre (passo 0 e etapa 99) ────────────────────────────────
+  // ── Parser local nome+tel (passo 0, sem API) ─────────────────────────────
+  function parsePasso0(txt){
+    var telMatch=txt.match(/(\d[\d\s\-\.]{7,13}\d)/);
+    var tel=telMatch?telMatch[0].replace(/\D/g,''):'';
+    var nome=txt.replace(telMatch?telMatch[0]:'','').replace(/[,;:\-]/g,' ').replace(/\s+/g,' ').trim();
+    return {nome:nome,tel:tel};
+  }
+
+  // ── API — texto livre (etapa 99 e passos 3A/3B) ───────────────────────────
   async function askAura(userMsg){
     dis(true);
     if(userMsg!==null) history.push({role:'user',content:userMsg});
@@ -637,18 +645,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
       renderBot(text);
       history.push({role:'assistant',content:text});
       processarRespostaAPI(data);
-      // Passo 0: nome+tel capturados → avança fluxo
-      if(fluxoEtapa===0 && data.lead && data.lead.nome && data.lead.tel){
-        leadData.nome=data.lead.nome;
-        leadData.tel=data.lead.tel;
-        saveLead(leadData);
-        // Timer 2 minutos para e-mail
-        setTimeout(function(){
-          emailTimerFired=true;
-          if(leadData.email) sendEmails(leadData);
-        }, 120000);
-        setTimeout(passo2, 600);
-      }
     }catch(e){
       dots.remove();
       renderBot('Desculpe, tive uma instabilidade. Pode tentar novamente?');
@@ -786,6 +782,26 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     var v=inp.value.trim(); if(!v) return;
     inp.value='';inp.style.height='auto';
     usr(v);
+    // Passo 0: parseia nome+tel localmente, sem chamar API
+    if(fluxoEtapa===0){
+      var parsed=parsePasso0(v);
+      if(parsed.nome && parsed.tel){
+        leadData.nome=parsed.nome;
+        leadData.tel=parsed.tel;
+        history.push({role:'user',content:v});
+        saveLead(leadData);
+        setTimeout(function(){
+          emailTimerFired=true;
+          if(leadData.email) sendEmails(leadData);
+        }, 120000);
+        setTimeout(passo2, 300);
+      } else {
+        // não conseguiu extrair — pede de novo
+        botAnimado('Não consegui identificar o WhatsApp. Pode me passar assim: "Nome Sobrenome, 27 99999-0000"?', function(){ dis(false); });
+        dis(true);
+      }
+      return;
+    }
     askAura(v);
   }
   inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
