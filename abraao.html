@@ -703,10 +703,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
         nascimento:ld.nascimento||'',
         referencias:pendingRefs,
         orig:origemUtm||'',
-        obs:ld.obs||'',
-        servico_interesse:ld.servico||'',
-        orcamento:ld.orcamento||'',
-        horario_ligacao:ld.horario_ligacao||'',
+        obs:[ld.servico?'Serviço: '+ld.servico:'',ld.orcamento?'Orçamento: '+ld.orcamento:'',ld.horario_ligacao?'Horário: '+ld.horario_ligacao:'',ld.obs||''].filter(Boolean).join(' | ')||'',
         chat_log:history.slice()
       })
     }).then(function(r){
