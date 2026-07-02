@@ -954,7 +954,7 @@ initStrip('strip-camilla',CAMILLA);
   function vincularCampanha(campanhaId){
     if(!savedLeadId){console.warn('[Aura] vincularCampanha: sem savedLeadId ainda, aguardando saveLead');return;}
     console.log('[Aura] vincularCampanha:',savedLeadId,'→ campanha',campanhaId);
-    fetch('https://inq-ink-system.vercel.app/api/vincular-campanha',{
+    fetch('https://inq-saas.vercel.app/api/vincular-campanha',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({clienteId:savedLeadId, campanhaId:campanhaId})
