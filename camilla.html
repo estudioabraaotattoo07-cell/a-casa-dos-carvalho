@@ -379,6 +379,61 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
 
   // ── FLUXO GUIADO ──────────────────────────────────────────────────────────
 
+  function passoProjetoAndamento(){
+    fluxoEtapa='projAndamento';
+    var fn=(leadData.nome||'').trim().split(' ')[0];
+    botAnimado('Que alegria te ver de novo, '+fn+'! 🌸 Vi aqui que você já tem um projeto em andamento com a gente. Quer agendar a próxima sessão ou tem uma ideia nova?', function(){
+      renderBotoes(['📅 Agendar próxima sessão','✨ Tenho uma ideia nova'], function(op){
+        history.push({role:'user',content:op});
+        if(op.indexOf('próxima')!==-1){
+          leadData.classificacao='sessao';
+          leadData.obs=(leadData.obs||'')+'Quer agendar a próxima sessão do projeto em andamento. ';
+          atualizarLead();
+          passoMelhorDia();
+        } else {
+          passo2();
+        }
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoClassificacao(cb){
+    fluxoEtapa='classificacao';
+    botAnimado('Você já está pronta para tatuar ou prefere conversar antes? 🌿', function(){
+      renderBotoes(['🎯 Já decidi, quero agendar','💬 Quero conversar antes'], function(op){
+        history.push({role:'user',content:op});
+        leadData.classificacao=op.indexOf('conversar')!==-1?'consulta':'sessao';
+        atualizarLead();
+        cb();
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoMelhorDia(){
+    fluxoEtapa='melhorDia';
+    botAnimado('Qual o melhor dia para sua sessão? 🌸', function(){
+      inp.placeholder='ex: sexta à tarde, ou daqui 2 semanas';
+      phBtn.style.display='none';
+      fluxoEnviarOverride=function(){
+        var txt=inp.value.trim(); if(!txt) return;
+        inp.value='';inp.style.height='auto';
+        usr(txt);
+        leadData.dia_preferido=txt;
+        leadData.obs=(leadData.obs||'')+'Dia preferido: '+txt+'. ';
+        history.push({role:'user',content:'Melhor dia: '+txt});
+        fluxoEnviarOverride=null;
+        atualizarLead();
+        botAnimado('Perfeito! Já está tudo anotado na sua ficha. 🤍', function(){ passo5(); });
+      };
+      dis(false);
+    });
+    dis(true);
+  }
+
   function passo2(){
     fluxoEtapa=2;
     var fn=(leadData.nome||'').trim().split(' ')[0];
@@ -510,7 +565,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
         history.push({role:'user',content:'Região: '+txt});
         fluxoEnviarOverride=null;
         atualizarLead();
-        passo5();
+        passoClassificacao(passoMelhorDia);
       };
       dis(false);
     });
@@ -687,7 +742,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     saveLead(leadData);
   }
 
-  function saveLead(ld){
+  var ETAPA_POR_CLASSIFICACAO={sessao:'aura_agend',consulta:'lead_morno'};
+
+  function saveLead(ld,cb){
     fetch(C.leadUrl,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -703,10 +760,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
         referencias:pendingRefs,
         orig:origemUtm||'',
         obs:[ld.servico?'Serviço: '+ld.servico:'',ld.orcamento?'Orçamento: '+ld.orcamento:'',ld.horario_ligacao?'Horário: '+ld.horario_ligacao:'',ld.obs||''].filter(Boolean).join(' | ')||'',
-        chat_log:history.slice()
+        chat_log:history.slice(),
+        etapa:ETAPA_POR_CLASSIFICACAO[ld.classificacao]||undefined
       })
     }).then(function(r){
-      if(!r.ok){r.text().then(function(t){console.warn('[Aura] lead error:',t);});return;}
+      if(!r.ok){r.text().then(function(t){console.warn('[Aura] lead error:',t);});return null;}
       return r.json();
     }).then(function(d){
       if(d && d.clienteId){
@@ -718,7 +776,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
         }).catch(function(){});
         if(campanhaVinculada && campanhaVinculada.id) vincularCampanha(campanhaVinculada.id);
       }
-    }).catch(function(e){console.warn('[Aura] lead fetch error:',e);});
+      if(cb) cb(d);
+    }).catch(function(e){console.warn('[Aura] lead fetch error:',e); if(cb) cb(null);});
   }
 
   function vincularCampanha(campanhaId){
@@ -780,12 +839,22 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
       if(p0Nome && p0Tel){
         leadData.nome=p0Nome;
         leadData.tel=p0Tel;
-        saveLead(leadData);
-        setTimeout(function(){
-          emailTimerFired=true;
-          if(leadData.email) sendEmails(leadData);
-        }, 120000);
-        setTimeout(passo2, 300);
+        dis(true);
+        var seguiu=false;
+        function seguirFluxo(resp){
+          if(seguiu) return; seguiu=true;
+          setTimeout(function(){
+            emailTimerFired=true;
+            if(leadData.email) sendEmails(leadData);
+          }, 120000);
+          var projetoAberto=resp&&resp.updated&&Array.isArray(resp.projetos)&&resp.projetos.some(function(p){
+            return p&&p.status!=='concluido'&&p.status!=='cancelado';
+          });
+          if(projetoAberto) passoProjetoAndamento();
+          else passo2();
+        }
+        saveLead(leadData,seguirFluxo);
+        setTimeout(seguirFluxo,2500);
       } else if(p0Nome && !p0Tel){
         botAnimado('Obrigada, '+p0Nome.split(' ')[0]+'! 🌸 Agora me passa seu WhatsApp com DDD:', function(){ dis(false); });
         dis(true);

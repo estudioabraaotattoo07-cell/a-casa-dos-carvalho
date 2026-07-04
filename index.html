@@ -574,6 +574,9 @@ initStrip('strip-camilla',CAMILLA);
 .ask{display:inline-block;margin-top:7px;padding:7px 14px;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid #2a2a2a;background:#161616;color:#777;transition:all .2s;font-family:'DM Sans',sans-serif}
 .ask:hover{background:#1e1e1e;color:#999}
 #aura-ph-inp{display:none}
+.flow-btns{display:flex;flex-wrap:wrap;gap:7px;align-self:flex-start;max-width:92%;padding:2px 0 4px 0}
+.flow-btn{background:#181818;border:1px solid rgba(201,168,76,0.35);color:#C9A84C;border-radius:20px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans','Segoe UI',sans-serif;transition:all .15s;white-space:nowrap}
+.flow-btn:hover{background:rgba(201,168,76,0.1);border-color:#C9A84C}
 </style>
 
 <button id="aura-fab">
@@ -604,18 +607,12 @@ initStrip('strip-camilla',CAMILLA);
 <script>
 (function(){
   var C={
-    rk:'re_ceSfj4e2_NKrF8m2CHfaMtaj2S1pPLq15',
-    eA:'estudioabraaotattoo07@gmail.com',
-    eC:'camilla-acampos@hotmail.com',
-    px:'https://inq-saas.vercel.app/api/resend',
-    fr:'aura@acasadoscarvalhotattoo.com.br',
     apiUrl:'https://inq-saas.vercel.app/api/chat',
     leadUrl:'https://inq-saas.vercel.app/api/lead',
     uploadUrl:'https://inq-saas.vercel.app/api/upload',
   };
 
   var history=[];
-  var leadSaved=false;
   var leadSavedKey='';
   var leadData={};
   var pendingRefs=[];  // URLs de imagens enviadas antes do lead ser salvo
@@ -664,24 +661,437 @@ initStrip('strip-camilla',CAMILLA);
   var xcl=document.getElementById('aura-x');
 
   var greetingMostrado=false;
-  var GREETING_TEXT='Olá! Seja bem-vindo à Casa dos Carvalho. Sou a Aura, assistente do estúdio. Posso te ajudar com informações, indicar o artista ideal para o seu projeto ou solicitar um agendamento. Como posso te ajudar?';
-  function mostrarGreeting(){
-    if(greetingMostrado||msgs.children.length)return;
-    greetingMostrado=true;
-    var el=document.createElement('div');
-    el.className='am b';
-    el.textContent=GREETING_TEXT;
-    msgs.appendChild(el);
-    msgs.scrollTop=msgs.scrollHeight;
-    // Registra no history para que Claude saiba o que a Aura disse — sem chamar a API
-    history.push({role:'assistant',content:GREETING_TEXT});
+  var fluxoEtapa=0;
+  var fluxoEnviarOverride=null;
+  var pendingFile=null;
+  var p0Nome='';
+  var p0Tel='';
+  var ETAPA_POR_CLASSIFICACAO={sessao:'aura_agend',consulta:'lead_morno'};
+
+  var VALORES_POR_ARTISTA={
+    'Abraão':{
+      'Até R$300':'Entendido! Existem possibilidades bacanas nessa faixa. O Abraão vai te orientar pessoalmente sobre o que é possível criar. 😊',
+      'Até R$1.000':'Ótima faixa! Abre espaço para trabalhos com bom tamanho e riqueza de detalhes. 🖤',
+      'Até R$5.000':'Excelente investimento! Essa faixa permite projetos com alta complexidade e acabamento impecável. ✦',
+      'Acima de R$5.000':'Você está pronto para um projeto de alto impacto. 🖤 Algo pensado do zero, feito para durar uma vida.',
+      'Ainda não sei':'Sem problema! Vamos conversar pessoalmente sobre as possibilidades. 😊'
+    },
+    'Camilla':{
+      'Até R$300':'Entendido! Existem criações lindas e muito significativas nessa faixa. 🤍',
+      'Até R$800':'Boa faixa para trabalhos delicados com bastante detalhe e cuidado. 🌸',
+      'Até R$1.500':'Espaço lindo para uma arte com complexidade e acabamento impecável. 🌿',
+      'Até R$3.000':'Que projeto especial está por vir. 🤍 Algo pensado do zero, único.',
+      'Ainda não sei':'Sem pressa! Vamos conversar com todo carinho sobre as possibilidades. 🌸'
+    },
+    'neutro':{
+      'Até R$300':'Entendido! Existem possibilidades bacanas nessa faixa — vamos te orientar sobre o que é possível criar. 😊',
+      'Até R$1.000':'Ótima faixa! Abre espaço para trabalhos com bom tamanho e riqueza de detalhes.',
+      'Até R$5.000':'Excelente investimento! Essa faixa permite projetos com alta complexidade e acabamento impecável.',
+      'Acima de R$5.000':'Você está pronto para um projeto de alto impacto — algo pensado do zero, feito para durar uma vida.',
+      'Ainda não sei':'Sem problema! Vamos conversar pessoalmente sobre as possibilidades. 😊'
+    }
+  };
+
+  function botAnimado(txt,cb){
+    var td=showDots();
+    setTimeout(function(){
+      td.remove();
+      var el=document.createElement('div');
+      el.className='am b';
+      el.textContent=txt;
+      msgs.appendChild(el);scr();
+      history.push({role:'assistant',content:txt});
+      if(cb) cb();
+    }, Math.min(500+txt.length*5,1600));
   }
 
+  function renderBotoes(opcoes,onClique){
+    var wrap=document.createElement('div');
+    wrap.className='flow-btns';
+    opcoes.forEach(function(op){
+      var b=document.createElement('button');
+      b.className='flow-btn';
+      b.textContent=op;
+      b.onclick=function(){
+        wrap.remove();
+        usr(op);
+        onClique(op);
+      };
+      wrap.appendChild(b);
+    });
+    msgs.appendChild(wrap);
+    scr();
+    return wrap;
+  }
+
+  function parseNomeTel(txt){
+    var telMatch=txt.match(/(\d[\d\s\-\.]{7,13}\d)/);
+    var tel=telMatch?telMatch[0].replace(/\D/g,''):'';
+    var nome=txt.replace(telMatch?telMatch[0]:'','').replace(/[,;:\-]/g,' ').replace(/\s+/g,' ').trim();
+    return {nome:nome,tel:tel};
+  }
+
+  function tomAtual(){ return VALORES_POR_ARTISTA[leadData.artista]?leadData.artista:'neutro'; }
+  function nomeProfissional(){
+    if(leadData.artista==='Camilla') return 'a Camilla';
+    if(leadData.artista==='Abraão') return 'o Abraão';
+    return 'nossa equipe';
+  }
+
+  // ── TRIAGEM (index.html: decide se é cliente e quem é o profissional) ──────
+  function iniciarTriagem(introTxt){
+    fluxoEtapa='intro';
+    botAnimado(introTxt, function(){
+      passoJaECliente();
+    });
+  }
+
+  function passoJaECliente(){
+    fluxoEtapa='jaECliente';
+    botAnimado('Você já é nosso cliente?', function(){
+      renderBotoes(['Sou cliente','Primeira vez'], function(op){
+        leadData.ehCliente=op==='Sou cliente'?'sim':'primeira_vez';
+        passoColetaNomeTel();
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoColetaNomeTel(){
+    fluxoEtapa=0;
+    var txt=leadData.artista
+      ? 'Que bom! Vou te ajudar a agendar com '+nomeProfissional()+'. Me conta seu nome e WhatsApp com DDD:'
+      : 'Perfeito! Me conta seu nome e WhatsApp com DDD:';
+    botAnimado(txt, function(){
+      inp.placeholder='ex: João Silva, 27 99999-0000';
+      phBtn.style.display='none';
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function aposNomeTel(){
+    dis(true);
+    var seguiu=false;
+    function seguirFluxo(resp){
+      if(seguiu) return; seguiu=true;
+      var projetoAberto=resp&&resp.updated&&Array.isArray(resp.projetos)&&resp.projetos.some(function(p){
+        return p&&p.status!=='concluido'&&p.status!=='cancelado';
+      });
+      if(resp&&resp.updated&&resp.artista&&!leadData.artista) leadData.artista=resp.artista;
+      if(projetoAberto){ passoProjetoAndamento(); return; }
+      if(!leadData.artista) passoQualProfissional();
+      else passoOQueBusca();
+    }
+    saveLead(leadData,seguirFluxo);
+    setTimeout(seguirFluxo,2500);
+  }
+
+  function passoQualProfissional(){
+    fluxoEtapa='qualProfissional';
+    botAnimado('Qual profissional você mais se identifica?', function(){
+      renderBotoes(['Camilla','Abraão','Não sei, me ajudem a escolher'], function(op){
+        if(op==='Camilla'||op==='Abraão') leadData.artista=op;
+        atualizarLead();
+        passoOQueBusca();
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoProjetoAndamento(){
+    fluxoEtapa='projAndamento';
+    var fn=(leadData.nome||'').trim().split(' ')[0];
+    botAnimado('Que bom te ver de novo, '+fn+'! Vi aqui que você já tem um projeto em andamento com a gente. Quer agendar a próxima sessão ou tem uma ideia nova?', function(){
+      renderBotoes(['📅 Agendar próxima sessão','✨ Tenho uma ideia nova'], function(op){
+        if(op.indexOf('próxima')!==-1){
+          leadData.classificacao='sessao';
+          leadData.obs=(leadData.obs||'')+'Quer agendar a próxima sessão do projeto em andamento. ';
+          atualizarLead();
+          passoMelhorDia();
+        } else {
+          passoOQueBusca();
+        }
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  // ── ENGINE COMUM (mesma lógica do abraao.html/camilla.html) ─────────────────
+  function passoOQueBusca(){
+    fluxoEtapa=2;
+    var fn=(leadData.nome||'').trim().split(' ')[0];
+    botAnimado('Perfeito, '+fn+'! O que você está buscando?', function(){
+      renderBotoes(['🖤 Tatuagem','💉 Piercing','💬 Consulta'], function(op){
+        var servico=op.replace(/^[^\w]+/,'').toLowerCase();
+        leadData.servico=servico;
+        atualizarLead();
+        if(servico==='tatuagem') passoIdeia();
+        else { leadData.obs=(leadData.obs||'')+'Serviço: '+servico+'. '; passoRegiao(); }
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoIdeia(){
+    fluxoEtapa=3;
+    botAnimado('Como está sua ideia?', function(){
+      renderBotoes([
+        '📸 Tenho referência',
+        '💡 Tenho algumas ideias, mas nada concreto ainda',
+        '🖤 Confio totalmente no artista'
+      ], function(op){
+        if(op.indexOf('referência')!==-1){
+          leadData.obs=(leadData.obs||'')+'Referência: tem referência visual. ';
+          passoIdeiaDetalhe();
+        } else if(op.indexOf('ideias')!==-1){
+          leadData.obs=(leadData.obs||'')+'Referência: tem ideias, quer ajuda para criar. ';
+          passoIdeiaDetalhe();
+        } else {
+          leadData.obs=(leadData.obs||'')+'Referência: confia totalmente no artista. ';
+          botAnimado('Que confiança incrível! 🖤', function(){ passoRegiao(); });
+        }
+        atualizarLead();
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoIdeiaDetalhe(){
+    fluxoEtapa='ideiaDetalhe';
+    botAnimado('Ótimo! Pode descrever o que você imagina e anexar sua referência em imagem.', function(){
+      inp.placeholder='ex: quero algo no estilo blackwork, traços finos...';
+      phBtn.style.display='flex';
+      pendingFile=null;
+      fluxoEnviarOverride=function(){
+        var txt=inp.value.trim();
+        if(!txt&&!pendingFile) return;
+        inp.value='';inp.style.height='auto';
+        if(txt) usr(txt);
+        var f=pendingFile; pendingFile=null;
+        removePendingPreview();
+        fluxoEnviarOverride=null;
+        phBtn.style.display='none';
+        enviarTextoEImagem(txt,f,function(){ passoRegiao(); });
+      };
+      dis(false);
+    });
+    dis(true);
+  }
+
+  async function enviarTextoEImagem(texto,file,cb){
+    dis(true);
+    if(file){
+      try{
+        var compressed=await compressImg(file,800,0.75);
+        var r=await fetch(C.uploadUrl,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({base64:compressed.base64,mimeType:'image/jpeg',clienteId:savedLeadId||null})});
+        var d=await r.json();
+        if(d.url) pendingRefs.push(d.url);
+      }catch(e){ console.warn('[Aura] upload erro:',e); }
+    }
+    if(texto) leadData.ideia=texto;
+    var ackMsg=file?'Recebi! Anotei sua ideia e a referência. 🖤':'Anotado! Vou repassar sua ideia. 🖤';
+    botAnimado(ackMsg, function(){
+      atualizarLead();
+      dis(false);
+      if(cb) cb();
+    });
+  }
+
+  function passoRegiao(){
+    fluxoEtapa=4;
+    botAnimado('Onde você imagina sua tatuagem?', function(){
+      inp.placeholder='ex: braço, costela, perna, costas, mão...';
+      phBtn.style.display='none';
+      fluxoEnviarOverride=function(){
+        var txt=inp.value.trim(); if(!txt) return;
+        inp.value='';inp.style.height='auto';
+        usr(txt);
+        leadData.regiao=txt;
+        fluxoEnviarOverride=null;
+        atualizarLead();
+        passoClassificacao(passoMelhorDia);
+      };
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoClassificacao(cb){
+    fluxoEtapa='classificacao';
+    botAnimado('Você já está pronto para tatuar ou prefere conversar antes?', function(){
+      renderBotoes(['🎯 Já decidi, quero agendar','💬 Quero conversar antes'], function(op){
+        leadData.classificacao=op.indexOf('conversar')!==-1?'consulta':'sessao';
+        atualizarLead();
+        cb();
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoMelhorDia(){
+    fluxoEtapa='melhorDia';
+    botAnimado('Qual o melhor dia para sua sessão?', function(){
+      inp.placeholder='ex: sexta à tarde, ou daqui 2 semanas';
+      phBtn.style.display='none';
+      fluxoEnviarOverride=function(){
+        var txt=inp.value.trim(); if(!txt) return;
+        inp.value='';inp.style.height='auto';
+        usr(txt);
+        leadData.dia_preferido=txt;
+        leadData.obs=(leadData.obs||'')+'Dia preferido: '+txt+'. ';
+        fluxoEnviarOverride=null;
+        atualizarLead();
+        botAnimado('Perfeito! Já está tudo anotado na sua ficha.', function(){ passoOrcamento(); });
+      };
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoOrcamento(){
+    fluxoEtapa=5;
+    var respostas=VALORES_POR_ARTISTA[tomAtual()];
+    botAnimado('Qual é o valor que você se programou para investir?', function(){
+      renderBotoes(Object.keys(respostas), function(op){
+        leadData.orcamento=op;
+        atualizarLead();
+        botAnimado(respostas[op], function(){ passoEmail(); });
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoEmail(){
+    fluxoEtapa=6;
+    botAnimado('Digite seu melhor e-mail para receber a confirmação da sua entrada no nosso ecossistema: 📩', function(){
+      inp.placeholder='ex: seuemail@gmail.com';
+      phBtn.style.display='none';
+      var pularBtn=document.createElement('button');
+      pularBtn.className='flow-btn';
+      pularBtn.id='btn-pular-email';
+      pularBtn.textContent='Pular';
+      document.getElementById('aura-inp-area').insertBefore(pularBtn,inp);
+      function finalizarEmail(email){
+        var pb=document.getElementById('btn-pular-email');
+        if(pb) pb.remove();
+        fluxoEnviarOverride=null;
+        if(email){ usr(email); leadData.email=email; }
+        else usr('Pular');
+        atualizarLead();
+        passoHorario();
+      }
+      pularBtn.onclick=function(){ finalizarEmail(''); };
+      fluxoEnviarOverride=function(){
+        var txt=inp.value.trim(); if(!txt) return;
+        inp.value='';inp.style.height='auto';
+        finalizarEmail(txt);
+      };
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoHorario(){
+    fluxoEtapa=62;
+    botAnimado('Qual o melhor horário para '+nomeProfissional()+' entrar em contato com você?', function(){
+      renderBotoes(['🌅 Manhã','☀️ Tarde','🌙 Noite'], function(op){
+        var hor=op.replace(/^[^\w]+/,'');
+        leadData.horario_ligacao=hor;
+        leadData.obs=(leadData.obs||'')+'Horário preferido: '+hor+'. ';
+        atualizarLead();
+        passoFinal();
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoFinal(){
+    fluxoEtapa=7;
+    var fn=(leadData.nome||'').trim().split(' ')[0];
+    var txt='🎉 Pronto, '+fn+'! Sua solicitação foi registrada e '+nomeProfissional()+' já foi notificado(a).\n\nSe quiser adiantar a conversa, clique abaixo — a mensagem já vai pré-preenchida:';
+    botAnimado(txt, function(){
+      var waHref=montarLinkWhatsApp(leadData,studioTelAtual);
+      var waWrap=document.createElement('div');
+      waWrap.style.cssText='padding:2px 0 8px 0;align-self:flex-start;';
+      waWrap.innerHTML='<a href="'+waHref+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;padding:12px 20px;background:#25D366;color:#fff;border-radius:28px;text-decoration:none;font-weight:600;font-size:0.9em;box-shadow:0 2px 12px rgba(37,211,102,.35);">'+WA_ICON_SVG+' 💬 Falar agora</a>';
+      msgs.appendChild(waWrap); scr();
+      waLinkOferecido=true;
+      fluxoEtapa=99;
+      inp.placeholder='Alguma dúvida? Pode perguntar aqui...';
+      phBtn.style.display='flex';
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function removePendingPreview(){
+    var prev=document.getElementById('pending-img-preview');
+    if(prev) prev.remove();
+  }
+
+  // ── WHATSAPP: coleta mínima antes do link direto ────────────────────────────
+  function iniciarFluxoWhatsApp(){
+    fluxoEtapa='waNomeTel';
+    botAnimado('Oi! Antes de te passar o link direto, só preciso de 2 coisinhas rápidas 🙂 Me conta seu nome e WhatsApp com DDD:', function(){
+      inp.placeholder='ex: João Silva, 27 99999-0000';
+      phBtn.style.display='none';
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoWaMotivo(){
+    fluxoEtapa='waMotivo';
+    botAnimado('E qual é o motivo do seu contato?', function(){
+      renderBotoes(['✨ Nova ideia','📅 Já sou cliente, quero agendar','💬 Só tirar uma dúvida'], function(op){
+        leadData.obs=(leadData.obs||'')+'Motivo (via WhatsApp): '+op+'. ';
+        if(op.indexOf('agendar')!==-1) leadData.classificacao='sessao';
+        else if(op.indexOf('dúvida')!==-1) leadData.classificacao='consulta';
+        atualizarLead();
+        passoWaFinal();
+      });
+      dis(false);
+    });
+    dis(true);
+  }
+
+  function passoWaFinal(){
+    fluxoEtapa=99;
+    var fn=(leadData.nome||'').trim().split(' ')[0];
+    botAnimado('Perfeito, '+fn+'! Aqui está o link direto pra continuar no WhatsApp:', function(){
+      var waHref=montarLinkWhatsApp(leadData,studioTelAtual);
+      var waWrap=document.createElement('div');
+      waWrap.style.cssText='padding:2px 0 8px 0;align-self:flex-start;';
+      waWrap.innerHTML='<a href="'+waHref+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;padding:12px 20px;background:#25D366;color:#fff;border-radius:28px;text-decoration:none;font-weight:600;font-size:0.9em;box-shadow:0 2px 12px rgba(37,211,102,.35);">'+WA_ICON_SVG+' 💬 Ir para o WhatsApp</a>';
+      msgs.appendChild(waWrap); scr();
+      waLinkOferecido=true;
+      inp.placeholder='Alguma dúvida? Pode perguntar aqui...';
+      phBtn.style.display='flex';
+      dis(false);
+    });
+    dis(true);
+  }
+
+  // ── Pontos de entrada ────────────────────────────────────────────────────────
   function openChat(){
     chat.classList.add('open');
     fab.style.opacity='0';fab.style.pointerEvents='none';
     carregarCampanhas();carregarConfig();
-    setTimeout(mostrarGreeting,400);
+    if(greetingMostrado||msgs.children.length) return;
+    greetingMostrado=true;
+    setTimeout(function(){
+      iniciarTriagem('Olá! Seja bem-vindo à Casa dos Carvalho. Sou a Aura, assistente do estúdio. Vou te ajudar a registrar sua solicitação rapidinho.');
+    },400);
   }
   // Auto-open após 20s — apenas uma vez por sessão
   if(!sessionStorage.getItem('aura_auto_opened')){
@@ -693,17 +1103,12 @@ initStrip('strip-camilla',CAMILLA);
     chat.classList.add('open');
     fab.style.opacity='0';fab.style.pointerEvents='none';
     carregarCampanhas();carregarConfig();
-    if(!msgs.children.length){
-      // Chat vazio — injeta na history silenciosamente e pede resposta
-      history.push({role:'user',content:'Quero tatuar com '+artista+'.'});
-      setTimeout(function(){ askAura(null); },400);
-    } else {
-      // Chat já aberto com mensagens — envia como mensagem visível
-      setTimeout(function(){
-        usr('Quero falar com '+artista+'.');
-        askAura('Quero falar com '+artista+'.');
-      },100);
-    }
+    if(greetingMostrado||msgs.children.length) return;
+    greetingMostrado=true;
+    leadData.artista=artista;
+    setTimeout(function(){
+      iniciarTriagem('Olá! Sou a Aura, assistente da Casa dos Carvalho. Vou te ajudar a agendar com '+(artista==='Camilla'?'a Camilla':'o Abraão')+'.');
+    },400);
   }
   window.openChatArtista=openChatArtista;
 
@@ -711,15 +1116,9 @@ initStrip('strip-camilla',CAMILLA);
     chat.classList.add('open');
     fab.style.opacity='0';fab.style.pointerEvents='none';
     carregarCampanhas();carregarConfig();
-    if(!msgs.children.length){
-      history.push({role:'user',content:'Quero falar com vocês pelo WhatsApp.'});
-      setTimeout(function(){askAura(null);},400);
-    }else{
-      setTimeout(function(){
-        usr('Quero falar pelo WhatsApp.');
-        askAura('Quero falar pelo WhatsApp.');
-      },100);
-    }
+    if(greetingMostrado||msgs.children.length) return;
+    greetingMostrado=true;
+    setTimeout(iniciarFluxoWhatsApp,400);
   }
   window.openChatWhatsApp=openChatWhatsApp;
 
@@ -861,20 +1260,15 @@ initStrip('strip-camilla',CAMILLA);
       await showTypingDelay(text);
       renderBot(text);
       history.push({role:'assistant',content:text});
-      // Handle lead data if returned — salva progressivamente
+      // Handle lead data if returned — mescla sem apagar o que já foi coletado no fluxo roteirizado
       if(data.lead){
         var ld=data.lead;
         if(ld.nome && ld.tel){
           var ldKey=ld.nome+'|'+ld.tel+'|'+ld.email+'|'+ld.artista+'|'+ld.insta+'|'+ld.ideia;
           if(ldKey!==leadSavedKey){
             leadSavedKey=ldKey;
-            leadData=ld;
-            saveLead(ld);
-          }
-          // E-mails de boas-vindas so uma vez, quando tiver email + ideia coletada
-          if(!leadSaved && ld.email && ld.ideia){
-            leadSaved=true;
-            sendEmails(ld);
+            Object.assign(leadData,ld);
+            saveLead(leadData);
           }
         }
       }
@@ -909,7 +1303,7 @@ initStrip('strip-camilla',CAMILLA);
     inp.focus();
   }
 
-  function saveLead(ld){
+  function saveLead(ld,cb){
     var payload={
       nome:ld.nome||'',
       tel:(ld.tel||'').replace(/\D/g,''),
@@ -922,7 +1316,8 @@ initStrip('strip-camilla',CAMILLA);
       referencias:pendingRefs,
       orig:origemUtm||'',
       obs:ld.obs||'',
-      chat_log:history.slice()
+      chat_log:history.slice(),
+      etapa:ETAPA_POR_CLASSIFICACAO[ld.classificacao]||undefined
     };
     console.log('[Aura] saveLead:',JSON.stringify(payload));
     fetch(C.leadUrl,{
@@ -930,7 +1325,7 @@ initStrip('strip-camilla',CAMILLA);
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(payload)
     }).then(function(r){
-      if(!r.ok){r.text().then(function(t){console.warn('[Aura] lead error:',t);});return;}
+      if(!r.ok){r.text().then(function(t){console.warn('[Aura] lead error:',t);});return null;}
       return r.json();
     }).then(function(d){
       if(d && d.clienteId){
@@ -948,7 +1343,16 @@ initStrip('strip-camilla',CAMILLA);
           vincularCampanha(campanhaVinculada.id);
         }
       }
-    }).catch(function(e){console.warn('[Aura] lead fetch error:',e);});
+      if(cb) cb(d);
+    }).catch(function(e){console.warn('[Aura] lead fetch error:',e); if(cb) cb(null);});
+  }
+
+  function atualizarLead(){
+    if(!leadData.nome || !leadData.tel) return;
+    var ldKey=(leadData.nome||'')+'|'+(leadData.tel||'')+'|'+(leadData.email||'')+'|'+(leadData.ideia||'')+'|'+(leadData.regiao||'')+'|'+(leadData.orcamento||'')+'|'+(leadData.horario_ligacao||'')+'|'+(leadData.artista||'')+'|'+(leadData.classificacao||'')+'|'+(leadData.dia_preferido||'');
+    if(ldKey===leadSavedKey) return;
+    leadSavedKey=ldKey;
+    saveLead(leadData);
   }
 
   function vincularCampanha(campanhaId){
@@ -963,44 +1367,36 @@ initStrip('strip-camilla',CAMILLA);
     }).catch(function(e){console.warn('[Aura] vincularCampanha error:',e);});
   }
 
-  function sendEmails(ld){
-    var pn=ld.artista||'A definir';
-    var nome=ld.nome||'';
-    var fn=nome.trim().split(' ')[0];
-    var lh='<div style="font-family:Arial,sans-serif;max-width:600px;color:#222">'+
-      '<h2 style="color:#C9A84C;border-bottom:2px solid #C9A84C;padding-bottom:8px">✦ Novo Lead — Aura Turbo</h2>'+
-      '<table style="border-collapse:collapse;width:100%">'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee;width:140px"><strong>Nome</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+nome+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Nascimento</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.nascimento||'—')+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>E-mail</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+ld.email+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WhatsApp</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+ld.tel+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Instagram</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.insta||'—')+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Ideia</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.ideia||'—')+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Região/Tamanho</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.regiao||'—')+'</td></tr>'+
-      '<tr><td style="padding:8px"><strong>Artista</strong></td><td style="padding:8px">'+pn+'</td></tr>'+
-      '</table></div>';
-    var to=[C.eA];
-    if(ld.artista==='Camilla')to.push(C.eC);
-    fetch(C.px,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({apiKey:C.rk,from:C.fr,to:to,subject:'✦ Novo Lead — '+nome,html:lh})
-    }).catch(function(){});
-    if(ld.email){
-      var ch='<div style="font-family:Arial,sans-serif;max-width:600px;color:#222">'+
-        '<h2 style="color:#C9A84C">✦ Casa dos Carvalho Tattoo</h2>'+
-        '<p>Olá, '+fn+'! Recebemos tudo certinho 🖤</p>'+
-        '<p>Sua ideia foi registrada e em breve nossa equipe vai entrar em contato para cuidar de cada detalhe do seu projeto.</p>'+
-        '<p>Obrigado(a) por escolher a Casa dos Carvalho!</p>'+
-        '<p style="color:#888;font-size:12px">Casa dos Carvalho Tattoo — Vitória, ES</p></div>';
-      fetch(C.px,{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({apiKey:C.rk,from:C.fr,to:[ld.email],subject:'✦ Recebemos sua mensagem!',html:ch})
-      }).catch(function(){});
-    }
-  }
-
   function send(){
-    var v=inp.value.trim();if(!v||inp.disabled)return;
+    if(inp.disabled) return;
+    if(fluxoEnviarOverride){ fluxoEnviarOverride(); return; }
+    var v=inp.value.trim(); if(!v) return;
     inp.value='';inp.style.height='auto';
     usr(v);
+    // Passo 0 (triagem geral) e waNomeTel (fluxo do botão de WhatsApp): acumula
+    // nome e telefone em turnos separados, sem chamar a API.
+    if(fluxoEtapa===0||fluxoEtapa==='waNomeTel'){
+      var ehWa=fluxoEtapa==='waNomeTel';
+      var parsed=parseNomeTel(v);
+      if(parsed.nome) p0Nome=parsed.nome;
+      if(parsed.tel) p0Tel=parsed.tel;
+      if(p0Nome && p0Tel){
+        leadData.nome=p0Nome;
+        leadData.tel=p0Tel;
+        if(ehWa){ atualizarLead(); passoWaMotivo(); }
+        else aposNomeTel();
+      } else if(p0Nome && !p0Tel){
+        botAnimado('Obrigado, '+p0Nome.split(' ')[0]+'! Agora me passa seu WhatsApp com DDD:', function(){ dis(false); });
+        dis(true);
+      } else if(!p0Nome && p0Tel){
+        botAnimado('Ótimo! E qual é o seu nome?', function(){ dis(false); });
+        dis(true);
+      } else {
+        botAnimado('Não consegui identificar. Pode me passar assim: "João Silva, 27 99999-0000"?', function(){ dis(false); });
+        dis(true);
+      }
+      return;
+    }
     askAura(v);
   }
   inp.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
@@ -1041,6 +1437,26 @@ initStrip('strip-camilla',CAMILLA);
     phInp.value='';
     if(!file.type.startsWith('image/')){
       renderBot('Só consigo receber imagens. Pode tentar novamente? 🖼️');
+      return;
+    }
+    // Passo de descrever a ideia: guarda em memória, mostra preview, só envia junto do texto
+    if(fluxoEtapa==='ideiaDetalhe'){
+      (async function(){
+        var compressed=await compressImg(file,800,0.75);
+        pendingFile=file;
+        removePendingPreview();
+        var prev=document.createElement('div');
+        prev.id='pending-img-preview';
+        prev.style.cssText='align-self:flex-end;margin-bottom:2px;';
+        var img=document.createElement('img');
+        img.src=compressed.dataUrl;
+        img.style.cssText='max-width:120px;max-height:120px;border-radius:8px;display:block;border:1px solid rgba(201,168,76,.3);';
+        var lbl=document.createElement('div');
+        lbl.textContent='📎 Aguardando envio...';
+        lbl.style.cssText='font-size:10px;color:#666;margin-top:3px;text-align:right;';
+        prev.appendChild(img); prev.appendChild(lbl);
+        msgs.appendChild(prev); scr();
+      })();
       return;
     }
     (async function(){
