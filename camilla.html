@@ -213,11 +213,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
 <script>
 (function(){
   var C={
-    rk:'re_ceSfj4e2_NKrF8m2CHfaMtaj2S1pPLq15',
-    eA:'estudioabraaotattoo07@gmail.com',
-    eC:'camilla-acampos@hotmail.com',
-    px:'https://inq-saas.vercel.app/api/resend',
-    fr:'aura@acasadoscarvalhotattoo.com.br',
     apiUrl:'https://inq-saas.vercel.app/api/chat',
     leadUrl:'https://inq-saas.vercel.app/api/lead',
     uploadUrl:'https://inq-saas.vercel.app/api/upload',
@@ -238,7 +233,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
   // Fluxo guiado
   var fluxoEtapa=0;
   var fluxoEnviarOverride=null;
-  var emailTimerFired=false;
   var pendingFile=null;
   var p0Nome='';
   var p0Tel='';
@@ -612,7 +606,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
           usr(email);
           leadData.email=email;
           history.push({role:'user',content:'E-mail: '+email});
-          if(emailTimerFired) sendEmails(leadData);
         } else {
           usr('Pular');
           history.push({role:'user',content:'(pulou e-mail)'});
@@ -789,40 +782,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     }).catch(function(e){console.warn('[Aura] vincularCampanha error:',e);});
   }
 
-  function sendEmails(ld){
-    var nome=ld.nome||'';
-    var fn=nome.trim().split(' ')[0];
-    var lh='<div style="font-family:Arial,sans-serif;max-width:600px;color:#222">'+
-      '<h2 style="color:#C9A84C;border-bottom:2px solid #C9A84C;padding-bottom:8px">🌸 Novo Lead — Aura / Camilla</h2>'+
-      '<table style="border-collapse:collapse;width:100%">'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee;width:140px"><strong>Nome</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+nome+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>WhatsApp</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+ld.tel+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>E-mail</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.email||'—')+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Serviço</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.servico||'—')+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Região</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.regiao||'—')+'</td></tr>'+
-      '<tr><td style="padding:8px;border-bottom:1px solid #eee"><strong>Orçamento</strong></td><td style="padding:8px;border-bottom:1px solid #eee">'+(ld.orcamento||'—')+'</td></tr>'+
-      '<tr><td style="padding:8px"><strong>Horário</strong></td><td style="padding:8px">'+(ld.horario_ligacao||'—')+'</td></tr>'+
-      '</table></div>';
-    fetch(C.px,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({apiKey:C.rk,from:C.fr,to:[C.eA,C.eC],subject:'🌸 Novo Lead (Camilla) — '+nome,html:lh})
-    }).catch(function(){});
-    if(ld.email){
-      var ch='<div style="font-family:Arial,sans-serif;max-width:600px;color:#222">'+
-        '<h2 style="color:#C9A84C">🌸 Casa dos Carvalho Tattoo</h2>'+
-        '<p>Olá, '+fn+'! Recebemos tudo com carinho. 🌿</p>'+
-        '<p style="margin-top:12px"><strong>Resumo da sua solicitação:</strong></p>'+
-        '<table style="border-collapse:collapse;width:100%;margin-top:8px">'+
-        '<tr><td style="padding:6px;border-bottom:1px solid #eee;width:120px"><strong>Serviço</strong></td><td style="padding:6px;border-bottom:1px solid #eee">'+(ld.servico||'—')+'</td></tr>'+
-        '<tr><td style="padding:6px;border-bottom:1px solid #eee"><strong>Região</strong></td><td style="padding:6px;border-bottom:1px solid #eee">'+(ld.regiao||'—')+'</td></tr>'+
-        '<tr><td style="padding:6px"><strong>Orçamento</strong></td><td style="padding:6px">'+(ld.orcamento||'—')+'</td></tr>'+
-        '</table>'+
-        '<p style="margin-top:16px">Em breve a Camilla ou nossa equipe vai entrar em contato. 🌸</p>'+
-        '<p style="color:#888;font-size:12px;margin-top:12px">Casa dos Carvalho Tattoo — Vitória, ES</p></div>';
-      fetch(C.px,{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({apiKey:C.rk,from:C.fr,to:[ld.email],subject:'🌸 Recebemos sua solicitação — Casa dos Carvalho',html:ch})
-      }).catch(function(){});
-    }
-  }
+  // E-mails (boas-vindas ao cliente + notificação à Camilla) são disparados pelo
+  // servidor (api/lead.js) assim que o lead entra no CRM — não daqui do navegador.
 
   // ── Send handler ──────────────────────────────────────────────────────────
   function send(){
@@ -843,10 +804,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
         var seguiu=false;
         function seguirFluxo(resp){
           if(seguiu) return; seguiu=true;
-          setTimeout(function(){
-            emailTimerFired=true;
-            if(leadData.email) sendEmails(leadData);
-          }, 120000);
           var projetoAberto=resp&&resp.updated&&Array.isArray(resp.projetos)&&resp.projetos.some(function(p){
             return p&&p.status!=='concluido'&&p.status!=='cancelado';
           });
