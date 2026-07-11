@@ -1007,6 +1007,7 @@ initStrip('strip-camilla',CAMILLA);
         var hor=op.replace(/^[^\w]+/,'');
         leadData.horario_ligacao=hor;
         leadData.obs=(leadData.obs||'')+'Horário preferido: '+hor+'. ';
+        leadData.completo=true;
         atualizarLead();
         passoFinal();
       });
@@ -1057,6 +1058,7 @@ initStrip('strip-camilla',CAMILLA);
         leadData.obs=(leadData.obs||'')+'Motivo (via WhatsApp): '+op+'. ';
         if(op.indexOf('agendar')!==-1) leadData.classificacao='sessao';
         else if(op.indexOf('dúvida')!==-1) leadData.classificacao='consulta';
+        leadData.completo=true;
         atualizarLead();
         passoWaFinal();
       });
@@ -1317,7 +1319,8 @@ initStrip('strip-camilla',CAMILLA);
       orig:origemUtm||'',
       obs:ld.obs||'',
       chat_log:history.slice(),
-      etapa:ETAPA_POR_CLASSIFICACAO[ld.classificacao]||undefined
+      etapa:ETAPA_POR_CLASSIFICACAO[ld.classificacao]||undefined,
+      completo:!!ld.completo
     };
     console.log('[Aura] saveLead:',JSON.stringify(payload));
     fetch(C.leadUrl,{
