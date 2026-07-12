@@ -1055,8 +1055,7 @@ initStrip('strip-camilla',CAMILLA);
     botAnimado('E qual é o motivo do seu contato?', function(){
       renderBotoes(['✨ Nova ideia','📅 Já sou cliente, quero agendar','💬 Só tirar uma dúvida'], function(op){
         leadData.obs=(leadData.obs||'')+'Motivo (via WhatsApp): '+op+'. ';
-        if(op.indexOf('agendar')!==-1) leadData.classificacao='sessao';
-        else if(op.indexOf('dúvida')!==-1) leadData.classificacao='consulta';
+        leadData.classificacao=op.indexOf('agendar')!==-1?'sessao':'consulta';
         atualizarLead();
         passoWaFinal();
       });
