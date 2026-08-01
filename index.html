@@ -646,7 +646,7 @@ initStrip('strip-camilla',CAMILLA);
   // Carrega campanhas ativas em background ao abrir o chat
   function carregarCampanhas(){
     if(campanhasAtivas.length>0) return;
-    fetch('https://inq-saas.vercel.app/api/campanhas-ativas').then(function(r){
+    fetch('https://inq-saas.vercel.app/api/lead?acao=campanhas-ativas').then(function(r){
       return r.ok?r.json():null;
     }).then(function(d){
       if(d && Array.isArray(d.campanhas)) campanhasAtivas=d.campanhas;
@@ -1288,7 +1288,7 @@ initStrip('strip-camilla',CAMILLA);
         if(typeof gtag==='function') gtag('event','conversion',{'send_to':'AW-18264070158/Gi3eCNrg9sMcEI6w_oRE'});
         // Registro no CRM
         var tipoEvento=tipoAgend==='consulta'?'Consulta':'Sessao';
-        fetch('https://inq-saas.vercel.app/api/registrar-evento',{
+        fetch('https://inq-saas.vercel.app/api/lead?acao=registrar-evento',{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({tipo_evento:tipoEvento,origem:origemUtm,cliente_id:savedLeadId||null})
         }).catch(function(){});
@@ -1333,7 +1333,7 @@ initStrip('strip-camilla',CAMILLA);
         // Meta Pixel — Lead (evento padrao)
         if(typeof fbq==='function') fbq('track','Lead',{origem:origemUtm});
         // Registro no CRM
-        fetch('https://inq-saas.vercel.app/api/registrar-evento',{
+        fetch('https://inq-saas.vercel.app/api/lead?acao=registrar-evento',{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({tipo_evento:'Lead',origem:origemUtm,cliente_id:savedLeadId})
         }).catch(function(){});
@@ -1357,7 +1357,7 @@ initStrip('strip-camilla',CAMILLA);
   function vincularCampanha(campanhaId){
     if(!savedLeadId){console.warn('[Aura] vincularCampanha: sem savedLeadId ainda, aguardando saveLead');return;}
     console.log('[Aura] vincularCampanha:',savedLeadId,'→ campanha',campanhaId);
-    fetch('https://inq-saas.vercel.app/api/vincular-campanha',{
+    fetch('https://inq-saas.vercel.app/api/lead?acao=vincular-campanha',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({clienteId:savedLeadId, campanhaId:campanhaId})
