@@ -756,7 +756,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
         orig:origemUtm||'',
         obs:[ld.servico?'Serviço: '+ld.servico:'',ld.orcamento?'Orçamento: '+ld.orcamento:'',ld.horario_ligacao?'Horário: '+ld.horario_ligacao:'',ld.obs||''].filter(Boolean).join(' | ')||'',
         chat_log:history.slice(),
-        etapa:ETAPA_POR_CLASSIFICACAO[ld.classificacao]||undefined
+        etapa:ETAPA_POR_CLASSIFICACAO[ld.classificacao]||undefined,
+        slug:C.slug
       })
     }).then(function(r){
       if(!r.ok){r.text().then(function(t){console.warn('[Aura] lead error:',t);});return null;}

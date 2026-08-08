@@ -1317,7 +1317,8 @@ initStrip('strip-camilla',CAMILLA);
       orig:origemUtm||'',
       obs:ld.obs||'',
       chat_log:history.slice(),
-      etapa:ETAPA_POR_CLASSIFICACAO[ld.classificacao]||undefined
+      etapa:ETAPA_POR_CLASSIFICACAO[ld.classificacao]||undefined,
+      slug:C.slug
     };
     console.log('[Aura] saveLead:',JSON.stringify(payload));
     fetch(C.leadUrl,{
