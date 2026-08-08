@@ -217,6 +217,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
     leadUrl:'https://inq-saas.vercel.app/api/lead',
     uploadUrl:'https://inq-saas.vercel.app/api/upload',
     contexto:'camilla',
+    slug:'a-casa-dos-carvalho',
   };
 
   var history=[];
@@ -676,7 +677,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:#fff;font-famil
       var res=await fetch(C.apiUrl,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({messages:history,campanhas:campanhasAtivas,contexto:C.contexto})
+        body:JSON.stringify({messages:history,campanhas:campanhasAtivas,contexto:C.contexto,slug:C.slug})
       });
       dots.remove();
       if(!res.ok) throw new Error('status '+res.status);

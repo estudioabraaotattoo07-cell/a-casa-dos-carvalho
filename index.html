@@ -610,6 +610,7 @@ initStrip('strip-camilla',CAMILLA);
     apiUrl:'https://inq-saas.vercel.app/api/chat',
     leadUrl:'https://inq-saas.vercel.app/api/lead',
     uploadUrl:'https://inq-saas.vercel.app/api/upload',
+    slug:'a-casa-dos-carvalho',
   };
 
   var history=[];
@@ -1250,7 +1251,7 @@ initStrip('strip-camilla',CAMILLA);
       var res=await fetch(C.apiUrl,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({messages:history, campanhas:campanhasAtivas})
+        body:JSON.stringify({messages:history, campanhas:campanhasAtivas, slug:C.slug})
       });
       dots.remove();
       if(!res.ok) throw new Error('status '+res.status);
